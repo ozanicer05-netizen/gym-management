@@ -1,9 +1,11 @@
+const BASE_PATH = '/gym';
+
 async function apiGet(path, params = {}) {
   const qs = new URLSearchParams(params).toString();
   const url = qs ? `${path}?${qs}` : path;
 
   const response = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers: { Accept: 'application/json' },
   });
 
   if (!response.ok) {
@@ -13,17 +15,17 @@ async function apiGet(path, params = {}) {
   const payload = await response.json();
 
   if (!payload.ok) {
-    throw new Error(payload.error || "API hatası");
+    throw new Error(payload.error || 'API hatası');
   }
 
   return payload;
 }
 
 function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }

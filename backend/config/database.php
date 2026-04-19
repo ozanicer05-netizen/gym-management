@@ -6,7 +6,7 @@ final class Database
 {
     private const HOST = 'localhost';
     private const USERNAME = 'root';
-    private const PASSWORD = '';
+    private const PASSWORD = 'ozan1234';
     private const DATABASE = 'gym_db';
 
     public static function connect(): mysqli

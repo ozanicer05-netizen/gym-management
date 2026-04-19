@@ -10,7 +10,7 @@ $limit = (int) ($_GET['limit'] ?? 50);
 
 try {
     $repo = new GymRepository();
-    $rows = $repo->listTrainers($search, $status, $limit);
+    $rows = $repo->listEquipment($search, $status, $limit);
     ApiResponse::ok($rows, ['count' => count($rows)]);
 } catch (Throwable $e) {
     ApiResponse::error('Sunucu hatası oluştu.', 500, $e->getMessage());

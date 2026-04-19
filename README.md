@@ -1,95 +1,84 @@
-# GymTrack — Spor Salonu Yönetim Sistemi
+# GymTrack (Rebuilt from ER Diagram)
 
-PHP + MySQL + Bootstrap ile geliştirilmiş spor salonu yönetim uygulaması.
+GymTrack is a **PHP + MySQL** gym management project rebuilt from the ER diagram.
 
-## Güncel Mimari
+## Project Structure
 
-Proje artık iki ana katmanla ilerliyor:
+- `frontend/` → UI pages
+- `backend/` → API and repository layer
+- `database/schema.sql` → schema (20 tables)
+- `database/seed.sql` → sample seed data (English)
 
-- `frontend/` → Kullanıcı arayüzü (Dashboard, Üye listesi vb.)
-- `backend/` → API ve veri erişim katmanı
+## Quick Start
 
-Mevcut eski sayfalar `legacy/` altında korunmuştur.
+1. Import `database/schema.sql` into MySQL (Workbench or CLI).
+2. Copy `.env.example` to `.env` in the project root and fill your own credentials:
 
-## Durum Özeti (05 Nisan 2026)
-
-- `frontend/` altında çalışan API tabanlı sayfalar:
-	- `frontend/index.php` (Dashboard)
-	- `frontend/members.php` (Üye listesi)
-	- `frontend/trainers.php` (Antrenör listesi)
-- `backend/api/` altında çalışan endpointler:
-	- `dashboard.php`
-	- `members.php`
-	- `trainers.php`
-- Hatalı oluşan `\{includes,assets` klasörü temizlendi.
-- Legacy placeholder sayfalardaki (`$page` tanımsız) hata giderildi.
-- Legacy dosyalar kökten `legacy/` klasörüne taşındı.
-- Kök `index.php`, yeni arayüz olan `frontend/index.php` adresine yönlendiriyor.
-
-## Klasör Yapısı (Yeni)
-
-- `frontend/includes/layout.php` → Ortak HTML iskeleti ve navbar
-- `frontend/assets/js/app.js` → API çağrı yardımcıları
-- `frontend/index.php` → API tabanlı dashboard
-- `frontend/members.php` → API tabanlı üye listesi
-- `frontend/trainers.php` → API tabanlı antrenör listesi
-- `backend/config/database.php` → Veritabanı bağlantı sınıfı
-- `backend/src/GymRepository.php` → Sorgu/repository katmanı
-- `backend/api/dashboard.php` → Dashboard JSON endpoint
-- `backend/api/members.php` → Üye listesi JSON endpoint
-- `backend/api/trainers.php` → Antrenör listesi JSON endpoint
-
-## Kurulum
-
-1. XAMPP (veya MAMP) kur.
-2. Bu klasörü web root altına koy (`htdocs/gym` gibi).
-3. Apache + MySQL servislerini başlat.
-4. `gym_db` veritabanını oluştur ve tabloları import et.
-5. Tarayıcıdan `http://localhost/gym/` aç (otomatik `frontend/index.php`'ye gider).
-
-## Veritabanı Bilgisi
-
-Varsayılan bağlantı bilgileri:
-
-- host: `localhost`
-- kullanıcı: `root`
-- şifre: `` (boş)
-- veritabanı: `gym_db`
-
-Gerekirse `backend/config/database.php` dosyasından güncelleyebilirsin.
-
-## API Endpointleri
-
-- `GET /gym/backend/api/dashboard.php`
-- `GET /gym/backend/api/members.php?search=ali&status=active&limit=20`
-- `GET /gym/backend/api/trainers.php?search=ayse&status=active&limit=20`
-
-Örnek yanıt formatı:
-
-```json
-{
-	"ok": true,
-	"data": { }
-}
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=your_password
+DB_NAME=gym_db
 ```
 
-## Frontend'i Nasıl Geliştireceğiz?
+3. (Optional) Import `database/seed.sql` to load demo records.
+4. Start the local PHP server:
 
-Frontend geliştirme için şu paterni izleyelim:
+```bash
+cd /Users/ozan/Downloads
+php -S localhost:8000
+```
 
-1. `backend/src/GymRepository.php` içine yeni sorgu metodu ekle.
-2. `backend/api/` altında ilgili endpoint dosyasını oluştur.
-3. `frontend/` altında sayfa oluştur (`layout.php` + `app.js/apiGet` kullan).
-4. Sayfaya filtre formu + tablo + loading/error durumlarını ekle.
-5. Navbar linkini `frontend/includes/layout.php` içine ekle.
+5. Open in browser:
+   - `http://localhost:8000/gym/`
 
-Bu pattern şu an `members` ve `trainers` modüllerinde uygulanmış durumda.
+## Seed Data
 
-Önerilen sıradaki sayfalar:
+`database/seed.sql` adds realistic demo records for all core modules:
 
-- `frontend/classes.php`
-- `frontend/subscriptions.php`
-- `frontend/equipment.php`
-- `frontend/branches.php`
+- users, roles, user-role assignments
+- branches, members, subscriptions, payments
+- trainers, skills, classes, schedules, reservations
+- equipment, maintenance, attendance, notifications, feedback
 
-Her biri için aynı API-first yaklaşım kullanılmalı (server-render değil, endpoint + fetch).
+After importing seed data, dashboard cards and list pages show non-zero values.
+
+## Team Collaboration
+
+### First-time setup (for collaborators)
+
+```bash
+git clone https://github.com/ozanicer05-netizen/gym-management.git
+cd gym-management
+cp .env.example .env
+```
+
+Then each teammate updates `.env` with local MySQL credentials.
+
+### Getting latest updates
+
+```bash
+git checkout main
+git pull origin main
+```
+
+If someone is working on a feature branch:
+
+```bash
+git checkout <feature-branch>
+git pull origin <feature-branch>
+```
+
+## Secret Safety
+
+- Keep real passwords only in `.env`.
+- `.env` is already ignored by `.gitignore`.
+- Commit `.env.example`, never commit `.env`.
+
+If `.env` was accidentally tracked before:
+
+```bash
+git rm --cached .env
+git commit -m "Stop tracking .env"
+git push
+```
