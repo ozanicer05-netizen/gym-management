@@ -258,7 +258,147 @@ final class GymRepository
         ";
 
         return $this->fetchAll($sql);
+    } public function getClassById(int $classId): ?array
+{
+    $classId = (int) $classId;
+
+    $sql = "
+        SELECT
+            c.class_id,
+            c.trainer_id,
+            c.branch_id,
+            c.class_name,
+            c.capacity,
+            c.duration_min,
+            c.level,
+            b.branch_name,
+            CONCAT(u.name, ' ', u.surname) AS trainer_name
+        FROM classes c
+        JOIN trainers t ON c.trainer_id = t.trainer_id
+        JOIN users u ON t.user_id = u.user_id
+        JOIN branches b ON c.branch_id = b.branch_id
+        WHERE c.class_id = {$classId}
+        LIMIT 1
+    ";
+
+    $result = $this->conn->query($sql);
+    $class = $result->fetch_assoc();
+
+    return $class ?: null;
+}
+
+public function createClass(array $data): array
+{
+    $trainerId = (int) ($data['trainer_id'] ?? 0);
+    $branchId = (int) ($data['branch_id'] ?? 0);
+    $className = $this->conn->real_escape_string(trim((string) ($data['class_name'] ?? '')));
+    $capacity = (int) ($data['capacity'] ?? 20);
+    $durationMin = (int) ($data['duration_min'] ?? 60);
+    $level = $this->conn->real_escape_string(trim((string) ($data['level'] ?? 'beginner')));
+
+    if ($trainerId <= 0) {
+        throw new InvalidArgumentException('trainer_id is required.');
     }
+
+    if ($branchId <= 0) {
+        throw new InvalidArgumentException('branch_id is required.');
+    }
+
+    if ($className === '') {
+        throw new InvalidArgumentException('class_name is required.');
+    }
+
+    if ($capacity <= 0) {
+        throw new InvalidArgumentException('capacity must be greater than 0.');
+    }
+
+    if ($durationMin <= 0) {
+        throw new InvalidArgumentException('duration_min must be greater than 0.');
+    }
+
+    $sql = "
+        INSERT INTO classes
+            (trainer_id, branch_id, class_name, capacity, duration_min, level)
+        VALUES
+            ({$trainerId}, {$branchId}, '{$className}', {$capacity}, {$durationMin}, '{$level}')
+    ";
+
+    $this->conn->query($sql);
+
+    $classId = (int) $this->conn->insert_id;
+
+    return $this->getClassById($classId);
+}
+
+public function updateClass(int $classId, array $data): array
+{
+    $existingClass = $this->getClassById($classId);
+
+    if (!$existingClass) {
+        throw new InvalidArgumentException('Class not found.');
+    }
+
+    $trainerId = (int) ($data['trainer_id'] ?? $existingClass['trainer_id']);
+    $branchId = (int) ($data['branch_id'] ?? $existingClass['branch_id']);
+    $className = $this->conn->real_escape_string(trim((string) ($data['class_name'] ?? $existingClass['class_name'])));
+    $capacity = (int) ($data['capacity'] ?? $existingClass['capacity']);
+    $durationMin = (int) ($data['duration_min'] ?? $existingClass['duration_min']);
+    $level = $this->conn->real_escape_string(trim((string) ($data['level'] ?? $existingClass['level'])));
+
+    if ($trainerId <= 0) {
+        throw new InvalidArgumentException('trainer_id is required.');
+    }
+
+    if ($branchId <= 0) {
+        throw new InvalidArgumentException('branch_id is required.');
+    }
+
+    if ($className === '') {
+        throw new InvalidArgumentException('class_name is required.');
+    }
+
+    if ($capacity <= 0) {
+        throw new InvalidArgumentException('capacity must be greater than 0.');
+    }
+
+    if ($durationMin <= 0) {
+        throw new InvalidArgumentException('duration_min must be greater than 0.');
+    }
+
+    $sql = "
+        UPDATE classes
+        SET
+            trainer_id = {$trainerId},
+            branch_id = {$branchId},
+            class_name = '{$className}',
+            capacity = {$capacity},
+            duration_min = {$durationMin},
+            level = '{$level}'
+        WHERE class_id = {$classId}
+    ";
+
+    $this->conn->query($sql);
+
+    return $this->getClassById($classId);
+}
+
+public function deleteClass(int $classId): void
+{
+    $classId = (int) $classId;
+
+    $existingClass = $this->getClassById($classId);
+
+    if (!$existingClass) {
+        throw new InvalidArgumentException('Class not found.');
+    }
+
+    $sql = "
+        DELETE FROM classes
+        WHERE class_id = {$classId}
+    ";
+
+    $this->conn->query($sql);
+}
 
     public function listBranches(string $search = '', string $status = '', int $limit = 50): array
     {
