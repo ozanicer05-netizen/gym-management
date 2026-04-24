@@ -3,19 +3,32 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../src/bootstrap.php';
+AuthGuard::requireApiAuth();
 
 $method = $_SERVER['REQUEST_METHOD'];
+$search = (string) ($_GET['search'] ?? '');
+$level  = (string) ($_GET['level'] ?? '');
+$limit  = max(1, min(200, (int) ($_GET['limit'] ?? 50)));
+$page   = max(1, (int) ($_GET['page'] ?? 1));
+$offset = ($page - 1) * $limit;
 
 try {
     $repo = new GymRepository();
 
     if ($method === 'GET') {
-        $search = (string) ($_GET['search'] ?? '');
-        $level = (string) ($_GET['level'] ?? '');
-        $limit = (int) ($_GET['limit'] ?? 50);
+        $rows       = $repo->listClasses($search, $level, $limit, $offset);
+        $total      = $repo->countClasses($search, $level);
+        $totalPages = max(1, (int) ceil($total / $limit));
 
-        $rows = $repo->listClasses($search, $level, $limit);
-        ApiResponse::ok($rows, ['count' => count($rows)]);
+        ApiResponse::ok($rows, [
+            'count'      => count($rows),
+            'total'      => $total,
+            'page'       => $page,
+            'limit'      => $limit,
+            'totalPages' => $totalPages,
+            'hasPrev'    => $page > 1,
+            'hasNext'    => $page < $totalPages,
+        ]);
         exit;
     }
 
@@ -68,5 +81,5 @@ try {
     ApiResponse::error('Method not allowed.', 405);
 
 } catch (Throwable $e) {
-    ApiResponse::error('Sunucu hatası oluştu.', 500, $e->getMessage());
+    ApiResponse::error('Server error occurred.', 500, $e->getMessage());
 }

@@ -24,3 +24,72 @@ body {
   background-color: #6c757d;
   color: #fff;
 }
+
+.dashboard-hero {
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  color: #fff;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero-pill {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.stat-card {
+  border: 0;
+  color: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.stat-members { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
+.stat-passive { background: linear-gradient(135deg, #64748b, #94a3b8); }
+.stat-trainers { background: linear-gradient(135deg, #059669, #10b981); }
+.stat-classes { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+.stat-equipment { background: linear-gradient(135deg, #475569, #64748b); }
+.stat-expiring { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #1f2937; }
+.stat-maintenance { background: linear-gradient(135deg, #dc2626, #ef4444); }
+
+.stat-icon {
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+.stat-label {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.insight-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.insight-title {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.insight-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.insight-sub {
+  color: #64748b;
+  font-size: 0.9rem;
+}

@@ -15,7 +15,7 @@ async function apiGet(path, params = {}) {
   const payload = await response.json();
 
   if (!payload.ok) {
-    throw new Error(payload.error || 'API hatası');
+    throw new Error(payload.error || 'API error');
   }
 
   return payload;
