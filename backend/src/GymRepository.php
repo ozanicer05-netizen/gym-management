@@ -292,6 +292,106 @@ final class GymRepository
 
         return $this->fetchAll($sql);
     }
+    public function getBranchById(int $branchId): ?array
+{
+    $branchId = (int) $branchId;
+
+    $sql = "
+        SELECT
+            branch_id,
+            branch_name,
+            address,
+            city,
+            phone,
+            status
+        FROM branches
+        WHERE branch_id = {$branchId}
+        LIMIT 1
+    ";
+
+    $result = $this->conn->query($sql);
+    $branch = $result->fetch_assoc();
+
+    return $branch ?: null;
+}
+
+public function createBranch(array $data): array
+{
+    $branchName = $this->conn->real_escape_string(trim((string) ($data['branch_name'] ?? '')));
+    $address = $this->conn->real_escape_string(trim((string) ($data['address'] ?? '')));
+    $city = $this->conn->real_escape_string(trim((string) ($data['city'] ?? '')));
+    $phone = $this->conn->real_escape_string(trim((string) ($data['phone'] ?? '')));
+    $status = $this->conn->real_escape_string(trim((string) ($data['status'] ?? 'active')));
+
+    if ($branchName === '') {
+        throw new InvalidArgumentException('branch_name is required.');
+    }
+
+    $sql = "
+        INSERT INTO branches
+            (branch_name, address, city, phone, status)
+        VALUES
+            ('{$branchName}', '{$address}', '{$city}', '{$phone}', '{$status}')
+    ";
+
+    $this->conn->query($sql);
+
+    $branchId = (int) $this->conn->insert_id;
+
+    return $this->getBranchById($branchId);
+}
+
+public function updateBranch(int $branchId, array $data): array
+{
+    $existingBranch = $this->getBranchById($branchId);
+
+    if (!$existingBranch) {
+        throw new InvalidArgumentException('Branch not found.');
+    }
+
+    $branchName = $this->conn->real_escape_string(trim((string) ($data['branch_name'] ?? $existingBranch['branch_name'])));
+    $address = $this->conn->real_escape_string(trim((string) ($data['address'] ?? $existingBranch['address'])));
+    $city = $this->conn->real_escape_string(trim((string) ($data['city'] ?? $existingBranch['city'])));
+    $phone = $this->conn->real_escape_string(trim((string) ($data['phone'] ?? $existingBranch['phone'])));
+    $status = $this->conn->real_escape_string(trim((string) ($data['status'] ?? $existingBranch['status'])));
+
+    if ($branchName === '') {
+        throw new InvalidArgumentException('branch_name is required.');
+    }
+
+    $sql = "
+        UPDATE branches
+        SET
+            branch_name = '{$branchName}',
+            address = '{$address}',
+            city = '{$city}',
+            phone = '{$phone}',
+            status = '{$status}'
+        WHERE branch_id = {$branchId}
+    ";
+
+    $this->conn->query($sql);
+
+    return $this->getBranchById($branchId);
+}
+
+public function deleteBranch(int $branchId): void
+{
+    $branchId = (int) $branchId;
+
+    $existingBranch = $this->getBranchById($branchId);
+
+    if (!$existingBranch) {
+        throw new InvalidArgumentException('Branch not found.');
+    }
+
+    $sql = "
+        DELETE FROM branches
+        WHERE branch_id = {$branchId}
+    ";
+
+    $this->conn->query($sql);
+}
 
     public function listSubscriptions(string $search = '', string $status = '', int $limit = 50): array
     {
