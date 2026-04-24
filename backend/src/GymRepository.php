@@ -221,6 +221,111 @@ final class GymRepository
 
         return $this->fetchAll($sql);
     }
+    public function getTrainerById(int $trainerId): ?array
+{
+    $trainerId = (int) $trainerId;
+
+    $sql = "
+        SELECT
+            t.trainer_id,
+            t.user_id,
+            u.name,
+            u.surname,
+            u.email,
+            u.phone,
+            t.branch_id,
+            b.branch_name,
+            t.specialization,
+            t.availability_status
+        FROM trainers t
+        JOIN users u ON t.user_id = u.user_id
+        JOIN branches b ON t.branch_id = b.branch_id
+        WHERE t.trainer_id = {$trainerId}
+        LIMIT 1
+    ";
+
+    $result = $this->conn->query($sql);
+    $trainer = $result->fetch_assoc();
+
+    return $trainer ?: null;
+}
+
+public function createTrainer(array $data): array
+{
+    $userId = (int) ($data['user_id'] ?? 0);
+    $branchId = (int) ($data['branch_id'] ?? 0);
+    $specialization = $this->conn->real_escape_string(trim((string) ($data['specialization'] ?? '')));
+    $availabilityStatus = $this->conn->real_escape_string(trim((string) ($data['availability_status'] ?? 'active')));
+
+    if ($userId <= 0) {
+        throw new InvalidArgumentException('user_id is required.');
+    }
+
+    if ($branchId <= 0) {
+        throw new InvalidArgumentException('branch_id is required.');
+    }
+
+    $sql = "
+        INSERT INTO trainers
+            (user_id, branch_id, specialization, availability_status)
+        VALUES
+            ({$userId}, {$branchId}, '{$specialization}', '{$availabilityStatus}')
+    ";
+
+    $this->conn->query($sql);
+
+    $trainerId = (int) $this->conn->insert_id;
+
+    return $this->getTrainerById($trainerId);
+}
+
+public function updateTrainer(int $trainerId, array $data): array
+{
+    $existingTrainer = $this->getTrainerById($trainerId);
+
+    if (!$existingTrainer) {
+        throw new InvalidArgumentException('Trainer not found.');
+    }
+
+    $branchId = (int) ($data['branch_id'] ?? $existingTrainer['branch_id']);
+    $specialization = $this->conn->real_escape_string(trim((string) ($data['specialization'] ?? $existingTrainer['specialization'])));
+    $availabilityStatus = $this->conn->real_escape_string(trim((string) ($data['availability_status'] ?? $existingTrainer['availability_status'])));
+
+    if ($branchId <= 0) {
+        throw new InvalidArgumentException('branch_id is required.');
+    }
+
+    $sql = "
+        UPDATE trainers
+        SET
+            branch_id = {$branchId},
+            specialization = '{$specialization}',
+            availability_status = '{$availabilityStatus}'
+        WHERE trainer_id = {$trainerId}
+    ";
+
+    $this->conn->query($sql);
+
+    return $this->getTrainerById($trainerId);
+}
+
+public function deleteTrainer(int $trainerId): void
+{
+    $trainerId = (int) $trainerId;
+
+    $existingTrainer = $this->getTrainerById($trainerId);
+
+    if (!$existingTrainer) {
+        throw new InvalidArgumentException('Trainer not found.');
+    }
+
+    $sql = "
+        DELETE FROM trainers
+        WHERE trainer_id = {$trainerId}
+    ";
+
+    $this->conn->query($sql);
+}
 
     public function listClasses(string $search = '', string $level = '', int $limit = 50): array
     {
