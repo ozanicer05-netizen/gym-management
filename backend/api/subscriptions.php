@@ -16,6 +16,17 @@ try {
     $repo = new GymRepository();
 
     if ($method === 'GET') {
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $sub = $repo->getSubscriptionById($id);
+            if (!$sub) {
+                ApiResponse::error('Subscription not found.', 404);
+                exit;
+            }
+            ApiResponse::ok($sub);
+            exit;
+        }
+
         $rows       = $repo->listSubscriptions($search, $status, $limit, $offset);
         $total      = $repo->countSubscriptions($search, $status);
         $totalPages = max(1, (int) ceil($total / $limit));

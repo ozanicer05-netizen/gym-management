@@ -16,6 +16,17 @@ try {
     $repo = new GymRepository();
 
     if ($method === 'GET') {
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $equipment = $repo->getEquipmentById($id);
+            if (!$equipment) {
+                ApiResponse::error('Equipment not found.', 404);
+                exit;
+            }
+            ApiResponse::ok($equipment);
+            exit;
+        }
+
         $rows       = $repo->listEquipment($search, $status, $limit, $offset);
         $total      = $repo->countEquipment($search, $status);
         $totalPages = max(1, (int) ceil($total / $limit));

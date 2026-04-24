@@ -16,6 +16,17 @@ try {
     $repo = new GymRepository();
 
     if ($method === 'GET') {
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $class = $repo->getClassById($id);
+            if (!$class) {
+                ApiResponse::error('Class not found.', 404);
+                exit;
+            }
+            ApiResponse::ok($class);
+            exit;
+        }
+
         $rows       = $repo->listClasses($search, $level, $limit, $offset);
         $total      = $repo->countClasses($search, $level);
         $totalPages = max(1, (int) ceil($total / $limit));

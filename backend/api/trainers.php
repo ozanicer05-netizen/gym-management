@@ -16,6 +16,17 @@ try {
     $repo = new GymRepository();
 
     if ($method === 'GET') {
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $trainer = $repo->getTrainerById($id);
+            if (!$trainer) {
+                ApiResponse::error('Trainer not found.', 404);
+                exit;
+            }
+            ApiResponse::ok($trainer);
+            exit;
+        }
+
         $rows       = $repo->listTrainers($search, $status, $limit, $offset);
         $total      = $repo->countTrainers($search, $status);
         $totalPages = max(1, (int) ceil($total / $limit));

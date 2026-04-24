@@ -16,6 +16,17 @@ try {
     $repo = new GymRepository();
 
     if ($method === 'GET') {
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $branch = $repo->getBranchById($id);
+            if (!$branch) {
+                ApiResponse::error('Branch not found.', 404);
+                exit;
+            }
+            ApiResponse::ok($branch);
+            exit;
+        }
+
         $rows       = $repo->listBranches($search, $status, $limit, $offset);
         $total      = $repo->countBranches($search, $status);
         $totalPages = max(1, (int) ceil($total / $limit));
