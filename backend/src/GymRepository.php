@@ -569,7 +569,135 @@ public function deleteBranch(int $branchId): void
 
         return $this->fetchAll($sql);
     }
+public function getSubscriptionById(int $subscriptionId): ?array
+{
+    $subscriptionId = (int) $subscriptionId;
 
+    $sql = "
+        SELECT
+            s.subscription_id,
+            s.member_id,
+            s.package_id,
+            CONCAT(u.name, ' ', u.surname) AS member_name,
+            p.package_name,
+            s.start_date,
+            s.end_date,
+            s.status
+        FROM subscriptions s
+        JOIN members m ON s.member_id = m.member_id
+        JOIN users u ON m.user_id = u.user_id
+        JOIN packages p ON s.package_id = p.package_id
+        WHERE s.subscription_id = {$subscriptionId}
+        LIMIT 1
+    ";
+
+    $result = $this->conn->query($sql);
+    $subscription = $result->fetch_assoc();
+
+    return $subscription ?: null;
+}
+
+public function createSubscription(array $data): array
+{
+    $memberId = (int) ($data['member_id'] ?? 0);
+    $packageId = (int) ($data['package_id'] ?? 0);
+    $startDate = $this->conn->real_escape_string(trim((string) ($data['start_date'] ?? '')));
+    $endDate = $this->conn->real_escape_string(trim((string) ($data['end_date'] ?? '')));
+    $status = $this->conn->real_escape_string(trim((string) ($data['status'] ?? 'active')));
+
+    if ($memberId <= 0) {
+        throw new InvalidArgumentException('member_id is required.');
+    }
+
+    if ($packageId <= 0) {
+        throw new InvalidArgumentException('package_id is required.');
+    }
+
+    if ($startDate === '') {
+        throw new InvalidArgumentException('start_date is required.');
+    }
+
+    if ($endDate === '') {
+        throw new InvalidArgumentException('end_date is required.');
+    }
+
+    $sql = "
+        INSERT INTO subscriptions
+            (member_id, package_id, start_date, end_date, status)
+        VALUES
+            ({$memberId}, {$packageId}, '{$startDate}', '{$endDate}', '{$status}')
+    ";
+
+    $this->conn->query($sql);
+
+    $subscriptionId = (int) $this->conn->insert_id;
+
+    return $this->getSubscriptionById($subscriptionId);
+}
+
+public function updateSubscription(int $subscriptionId, array $data): array
+{
+    $existingSubscription = $this->getSubscriptionById($subscriptionId);
+
+    if (!$existingSubscription) {
+        throw new InvalidArgumentException('Subscription not found.');
+    }
+
+    $memberId = (int) ($data['member_id'] ?? $existingSubscription['member_id']);
+    $packageId = (int) ($data['package_id'] ?? $existingSubscription['package_id']);
+    $startDate = $this->conn->real_escape_string(trim((string) ($data['start_date'] ?? $existingSubscription['start_date'])));
+    $endDate = $this->conn->real_escape_string(trim((string) ($data['end_date'] ?? $existingSubscription['end_date'])));
+    $status = $this->conn->real_escape_string(trim((string) ($data['status'] ?? $existingSubscription['status'])));
+
+    if ($memberId <= 0) {
+        throw new InvalidArgumentException('member_id is required.');
+    }
+
+    if ($packageId <= 0) {
+        throw new InvalidArgumentException('package_id is required.');
+    }
+
+    if ($startDate === '') {
+        throw new InvalidArgumentException('start_date is required.');
+    }
+
+    if ($endDate === '') {
+        throw new InvalidArgumentException('end_date is required.');
+    }
+
+    $sql = "
+        UPDATE subscriptions
+        SET
+            member_id = {$memberId},
+            package_id = {$packageId},
+            start_date = '{$startDate}',
+            end_date = '{$endDate}',
+            status = '{$status}'
+        WHERE subscription_id = {$subscriptionId}
+    ";
+
+    $this->conn->query($sql);
+
+    return $this->getSubscriptionById($subscriptionId);
+}
+
+public function deleteSubscription(int $subscriptionId): void
+{
+    $subscriptionId = (int) $subscriptionId;
+
+    $existingSubscription = $this->getSubscriptionById($subscriptionId);
+
+    if (!$existingSubscription) {
+        throw new InvalidArgumentException('Subscription not found.');
+    }
+
+    $sql = "
+        DELETE FROM subscriptions
+        WHERE subscription_id = {$subscriptionId}
+    ";
+
+    $this->conn->query($sql);
+}
     public function listEquipment(string $search = '', string $status = '', int $limit = 50): array
     {
         $search = trim($search);
