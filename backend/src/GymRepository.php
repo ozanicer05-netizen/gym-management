@@ -607,6 +607,135 @@ public function deleteBranch(int $branchId): void
         return $this->fetchAll($sql);
     }
 
+    public function getEquipmentById(int $equipmentId): ?array
+{
+    $equipmentId = (int) $equipmentId;
+
+    $sql = "
+        SELECT
+            e.equipment_id,
+            e.branch_id,
+            e.category_id,
+            e.equipment_name,
+            e.brand,
+            e.purchase_date,
+            e.status,
+            b.branch_name,
+            ec.category_name
+        FROM equipment e
+        JOIN branches b ON e.branch_id = b.branch_id
+        JOIN equipment_categories ec ON e.category_id = ec.category_id
+        WHERE e.equipment_id = {$equipmentId}
+        LIMIT 1
+    ";
+
+    $result = $this->conn->query($sql);
+    $equipment = $result->fetch_assoc();
+
+    return $equipment ?: null;
+}
+
+public function createEquipment(array $data): array
+{
+    $branchId = (int) ($data['branch_id'] ?? 0);
+    $categoryId = (int) ($data['category_id'] ?? 0);
+    $equipmentName = $this->conn->real_escape_string(trim((string) ($data['equipment_name'] ?? '')));
+    $brand = $this->conn->real_escape_string(trim((string) ($data['brand'] ?? '')));
+    $purchaseDate = $this->conn->real_escape_string(trim((string) ($data['purchase_date'] ?? '')));
+    $status = $this->conn->real_escape_string(trim((string) ($data['status'] ?? 'active')));
+
+    if ($branchId <= 0) {
+        throw new InvalidArgumentException('branch_id is required.');
+    }
+
+    if ($categoryId <= 0) {
+        throw new InvalidArgumentException('category_id is required.');
+    }
+
+    if ($equipmentName === '') {
+        throw new InvalidArgumentException('equipment_name is required.');
+    }
+
+    $purchaseDateValue = $purchaseDate !== '' ? "'{$purchaseDate}'" : "NULL";
+
+    $sql = "
+        INSERT INTO equipment
+            (branch_id, category_id, equipment_name, brand, purchase_date, status)
+        VALUES
+            ({$branchId}, {$categoryId}, '{$equipmentName}', '{$brand}', {$purchaseDateValue}, '{$status}')
+    ";
+
+    $this->conn->query($sql);
+
+    $equipmentId = (int) $this->conn->insert_id;
+
+    return $this->getEquipmentById($equipmentId);
+}
+
+public function updateEquipment(int $equipmentId, array $data): array
+{
+    $existingEquipment = $this->getEquipmentById($equipmentId);
+
+    if (!$existingEquipment) {
+        throw new InvalidArgumentException('Equipment not found.');
+    }
+
+    $branchId = (int) ($data['branch_id'] ?? $existingEquipment['branch_id']);
+    $categoryId = (int) ($data['category_id'] ?? $existingEquipment['category_id']);
+    $equipmentName = $this->conn->real_escape_string(trim((string) ($data['equipment_name'] ?? $existingEquipment['equipment_name'])));
+    $brand = $this->conn->real_escape_string(trim((string) ($data['brand'] ?? $existingEquipment['brand'])));
+    $purchaseDate = $this->conn->real_escape_string(trim((string) ($data['purchase_date'] ?? $existingEquipment['purchase_date'])));
+    $status = $this->conn->real_escape_string(trim((string) ($data['status'] ?? $existingEquipment['status'])));
+
+    if ($branchId <= 0) {
+        throw new InvalidArgumentException('branch_id is required.');
+    }
+
+    if ($categoryId <= 0) {
+        throw new InvalidArgumentException('category_id is required.');
+    }
+
+    if ($equipmentName === '') {
+        throw new InvalidArgumentException('equipment_name is required.');
+    }
+
+    $purchaseDateValue = $purchaseDate !== '' ? "'{$purchaseDate}'" : "NULL";
+
+    $sql = "
+        UPDATE equipment
+        SET
+            branch_id = {$branchId},
+            category_id = {$categoryId},
+            equipment_name = '{$equipmentName}',
+            brand = '{$brand}',
+            purchase_date = {$purchaseDateValue},
+            status = '{$status}'
+        WHERE equipment_id = {$equipmentId}
+    ";
+
+    $this->conn->query($sql);
+
+    return $this->getEquipmentById($equipmentId);
+}
+
+public function deleteEquipment(int $equipmentId): void
+{
+    $equipmentId = (int) $equipmentId;
+
+    $existingEquipment = $this->getEquipmentById($equipmentId);
+
+    if (!$existingEquipment) {
+        throw new InvalidArgumentException('Equipment not found.');
+    }
+
+    $sql = "
+        DELETE FROM equipment
+        WHERE equipment_id = {$equipmentId}
+    ";
+
+    $this->conn->query($sql);
+}
+
     private function normalizeLimit(int $limit): int
     {
         return max(1, min(200, $limit));
