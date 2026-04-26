@@ -27,7 +27,8 @@ try {
             exit;
         }
 
-        $rows       = $repo->listBranches($search, $status, $limit, $offset);
+        $withStats  = isset($_GET['stats']) && $_GET['stats'] === '1';
+        $rows       = $repo->listBranches($search, $status, $limit, $offset, $withStats);
         $total      = $repo->countBranches($search, $status);
         $totalPages = max(1, (int) ceil($total / $limit));
 

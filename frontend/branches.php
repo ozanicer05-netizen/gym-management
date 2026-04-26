@@ -21,8 +21,8 @@ renderLayoutStart('Branches');
 
 <div class="card"><div class="card-body p-0"><div class="table-responsive">
 <table class="table table-hover mb-0">
-<thead><tr><th>#</th><th>Branch</th><th>City</th><th>Phone</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
-<tbody id="branches-body"><tr><td colspan="6" class="text-center py-4 text-muted">Loading...</td></tr></tbody>
+<thead><tr><th>#</th><th>Branch</th><th>City</th><th>Phone</th><th class="text-end">Members</th><th class="text-end">Revenue (This Month)</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+<tbody id="branches-body"><tr><td colspan="8" class="text-center py-4 text-muted">Loading...</td></tr></tbody>
 </table>
 </div></div></div>
 
@@ -85,19 +85,21 @@ async function loadBranches(page = 1) {
   const search = document.getElementById('search').value.trim();
   const status = document.getElementById('status').value;
 
-  tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Loading...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Loading...</td></tr>';
 
   try {
-    const payload = await apiGet('/gym/backend/api/branches.php', { search, status, limit: 50, page });
+    const payload = await apiGet('/gym/backend/api/branches.php', { search, status, limit: 50, page, stats: 1 });
     const rows = payload.data;
     branchesMeta = payload.meta || branchesMeta;
     branchesPage = Number(branchesMeta.page ?? page);
     renderBranchesPagination(branchesMeta);
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No records found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No records found.</td></tr>';
       return;
     }
+
+    const fmtMoney = v => '$' + Number(v ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     tbody.innerHTML = rows.map(row => `
       <tr>
@@ -105,6 +107,8 @@ async function loadBranches(page = 1) {
         <td>${escapeHtml(row.branch_name)}</td>
         <td>${escapeHtml(row.city)}</td>
         <td>${escapeHtml(row.phone)}</td>
+        <td class="text-end">${Number(row.member_count ?? 0).toLocaleString('en-US')}</td>
+        <td class="text-end">${fmtMoney(row.monthly_revenue)}</td>
         <td><span class="badge ${row.status === 'active' ? 'badge-aktif' : 'badge-pasif'}">${row.status === 'active' ? 'Active' : 'Inactive'}</span></td>
         <td class="text-end">
           <button class="btn btn-sm btn-outline-primary me-1" data-action="edit" data-id="${Number(row.branch_id)}"><i class="bi bi-pencil"></i></button>
@@ -113,7 +117,7 @@ async function loadBranches(page = 1) {
       </tr>
     `).join('');
   } catch (error) {
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Failed to load: ${escapeHtml(error.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Failed to load: ${escapeHtml(error.message)}</td></tr>`;
     renderBranchesPagination({ totalPages: 1, hasPrev: false, hasNext: false, total: 0, page: 1 });
   }
 }

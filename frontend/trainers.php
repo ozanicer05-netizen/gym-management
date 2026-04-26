@@ -44,9 +44,29 @@ renderLayoutStart('Trainers');
         </div>
         <div class="modal-body">
           <input type="hidden" id="trainer-id">
-          <div class="mb-2" id="trainer-user-group">
-            <label class="form-label form-label-sm">User *</label>
-            <select id="trainer-user" class="form-select form-select-sm" required></select>
+          <div class="mb-2" id="trainer-user-mode-group">
+            <label class="form-label form-label-sm d-block">User</label>
+            <div class="btn-group btn-group-sm" role="group">
+              <input type="radio" class="btn-check" name="trainer-user-mode" id="trainer-user-mode-new" value="new" checked>
+              <label class="btn btn-outline-primary" for="trainer-user-mode-new">New User</label>
+              <input type="radio" class="btn-check" name="trainer-user-mode" id="trainer-user-mode-existing" value="existing">
+              <label class="btn btn-outline-primary" for="trainer-user-mode-existing">Existing User</label>
+            </div>
+          </div>
+          <div id="trainer-user-new-group">
+            <div class="row g-2">
+              <div class="col-6 mb-2"><label class="form-label form-label-sm">First Name *</label><input id="trainer-user-name" class="form-control form-control-sm"></div>
+              <div class="col-6 mb-2"><label class="form-label form-label-sm">Last Name *</label><input id="trainer-user-surname" class="form-control form-control-sm"></div>
+            </div>
+            <div class="mb-2"><label class="form-label form-label-sm">Email *</label><input id="trainer-user-email" type="email" class="form-control form-control-sm"></div>
+            <div class="row g-2">
+              <div class="col-6 mb-2"><label class="form-label form-label-sm">Phone</label><input id="trainer-user-phone" class="form-control form-control-sm"></div>
+              <div class="col-6 mb-2"><label class="form-label form-label-sm">Password</label><input id="trainer-user-password" type="text" class="form-control form-control-sm" placeholder="Default: Welcome123!"></div>
+            </div>
+          </div>
+          <div class="mb-2 d-none" id="trainer-user-existing-group">
+            <label class="form-label form-label-sm">Select Existing User *</label>
+            <select id="trainer-user" class="form-select form-select-sm"></select>
             <small class="text-muted">Only users who aren't already a trainer are listed.</small>
           </div>
           <div class="mb-2"><label class="form-label form-label-sm">Branch *</label><select id="trainer-branch" class="form-select form-select-sm" required></select></div>
@@ -137,21 +157,40 @@ async function populateTrainerUsers() {
   ).join('');
 }
 
+function setTrainerUserMode(mode) {
+  const newGrp = document.getElementById('trainer-user-new-group');
+  const exGrp  = document.getElementById('trainer-user-existing-group');
+  if (mode === 'existing') {
+    newGrp.classList.add('d-none');
+    exGrp.classList.remove('d-none');
+  } else {
+    newGrp.classList.remove('d-none');
+    exGrp.classList.add('d-none');
+  }
+}
+
 async function openTrainerModal(row = null) {
   document.getElementById('trainer-form-error').classList.add('d-none');
   document.getElementById('trainer-form').reset();
   document.getElementById('trainer-id').value = row ? row.trainer_id : '';
   document.getElementById('trainer-modal-title').textContent = row ? 'Edit Trainer' : 'New Trainer';
 
-  const userGroup = document.getElementById('trainer-user-group');
+  const modeGroup = document.getElementById('trainer-user-mode-group');
+  const newGrp    = document.getElementById('trainer-user-new-group');
+  const exGrp     = document.getElementById('trainer-user-existing-group');
+
   if (row) {
-    userGroup.classList.add('d-none');
+    modeGroup.classList.add('d-none');
+    newGrp.classList.add('d-none');
+    exGrp.classList.add('d-none');
     await populateTrainerBranches(row.branch_id);
     document.getElementById('trainer-branch').value = row.branch_id ?? '';
     document.getElementById('trainer-specialization').value = row.specialization ?? '';
     document.getElementById('trainer-availability').value = row.availability_status ?? 'active';
   } else {
-    userGroup.classList.remove('d-none');
+    modeGroup.classList.remove('d-none');
+    document.getElementById('trainer-user-mode-new').checked = true;
+    setTrainerUserMode('new');
     await Promise.all([populateTrainerUsers(), populateTrainerBranches()]);
   }
   trainerModal.show();
@@ -211,7 +250,29 @@ document.getElementById('trainer-form').addEventListener('submit', async (e) => 
     availability_status: document.getElementById('trainer-availability').value,
   };
   if (!id) {
-    body.user_id = Number(document.getElementById('trainer-user').value);
+    const mode = document.querySelector('input[name="trainer-user-mode"]:checked')?.value || 'new';
+    if (mode === 'existing') {
+      body.user_id = Number(document.getElementById('trainer-user').value);
+      if (!body.user_id) {
+        errorBox.textContent = 'Please select a user.';
+        errorBox.classList.remove('d-none');
+        return;
+      }
+    } else {
+      const name    = document.getElementById('trainer-user-name').value.trim();
+      const surname = document.getElementById('trainer-user-surname').value.trim();
+      const email   = document.getElementById('trainer-user-email').value.trim();
+      if (!name || !surname || !email) {
+        errorBox.textContent = 'First name, last name, and email are required.';
+        errorBox.classList.remove('d-none');
+        return;
+      }
+      body.user = {
+        name, surname, email,
+        phone:    document.getElementById('trainer-user-phone').value.trim(),
+        password: document.getElementById('trainer-user-password').value,
+      };
+    }
   }
 
   try {
@@ -232,6 +293,9 @@ document.getElementById('trainer-form').addEventListener('submit', async (e) => 
 
 document.addEventListener('DOMContentLoaded', () => {
   trainerModal = new bootstrap.Modal(document.getElementById('trainer-modal'));
+  document.querySelectorAll('input[name="trainer-user-mode"]').forEach(r =>
+    r.addEventListener('change', e => setTrainerUserMode(e.target.value))
+  );
   loadTrainers(1);
 });
 </script>

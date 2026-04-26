@@ -61,9 +61,29 @@ renderLayoutStart('Members');
         </div>
         <div class="modal-body">
           <input type="hidden" id="member-id">
-          <div class="mb-2" id="member-user-group">
-            <label class="form-label form-label-sm">User *</label>
-            <select id="member-user" class="form-select form-select-sm" required></select>
+          <div class="mb-2" id="member-user-mode-group">
+            <label class="form-label form-label-sm d-block">User</label>
+            <div class="btn-group btn-group-sm" role="group">
+              <input type="radio" class="btn-check" name="member-user-mode" id="member-user-mode-new" value="new" checked>
+              <label class="btn btn-outline-primary" for="member-user-mode-new">New User</label>
+              <input type="radio" class="btn-check" name="member-user-mode" id="member-user-mode-existing" value="existing">
+              <label class="btn btn-outline-primary" for="member-user-mode-existing">Existing User</label>
+            </div>
+          </div>
+          <div id="member-user-new-group">
+            <div class="row g-2">
+              <div class="col-6 mb-2"><label class="form-label form-label-sm">First Name *</label><input id="member-user-name" class="form-control form-control-sm"></div>
+              <div class="col-6 mb-2"><label class="form-label form-label-sm">Last Name *</label><input id="member-user-surname" class="form-control form-control-sm"></div>
+            </div>
+            <div class="mb-2"><label class="form-label form-label-sm">Email *</label><input id="member-user-email" type="email" class="form-control form-control-sm"></div>
+            <div class="row g-2">
+              <div class="col-6 mb-2"><label class="form-label form-label-sm">Phone</label><input id="member-user-phone" class="form-control form-control-sm"></div>
+              <div class="col-6 mb-2"><label class="form-label form-label-sm">Password</label><input id="member-user-password" type="text" class="form-control form-control-sm" placeholder="Default: Welcome123!"></div>
+            </div>
+          </div>
+          <div class="mb-2 d-none" id="member-user-existing-group">
+            <label class="form-label form-label-sm">Select Existing User *</label>
+            <select id="member-user" class="form-select form-select-sm"></select>
             <small class="text-muted">Only users who aren't already a member are listed.</small>
           </div>
           <div class="mb-2"><label class="form-label form-label-sm">Branch *</label><select id="member-branch" class="form-select form-select-sm" required></select></div>
@@ -165,15 +185,32 @@ async function populateUserOptions() {
   ).join('');
 }
 
+function setMemberUserMode(mode) {
+  const newGrp = document.getElementById('member-user-new-group');
+  const exGrp  = document.getElementById('member-user-existing-group');
+  if (mode === 'existing') {
+    newGrp.classList.add('d-none');
+    exGrp.classList.remove('d-none');
+  } else {
+    newGrp.classList.remove('d-none');
+    exGrp.classList.add('d-none');
+  }
+}
+
 async function openMemberModal(row = null) {
   document.getElementById('member-form-error').classList.add('d-none');
   document.getElementById('member-form').reset();
   document.getElementById('member-id').value = row ? row.member_id : '';
   document.getElementById('member-modal-title').textContent = row ? 'Edit Member' : 'New Member';
 
-  const userGroup = document.getElementById('member-user-group');
+  const modeGroup = document.getElementById('member-user-mode-group');
+  const newGrp    = document.getElementById('member-user-new-group');
+  const exGrp     = document.getElementById('member-user-existing-group');
+
   if (row) {
-    userGroup.classList.add('d-none');
+    modeGroup.classList.add('d-none');
+    newGrp.classList.add('d-none');
+    exGrp.classList.add('d-none');
     await populateBranchOptions(row.branch_id);
     document.getElementById('member-branch').value = row.branch_id ?? '';
     document.getElementById('member-birth-date').value = row.birth_date ?? '';
@@ -181,7 +218,9 @@ async function openMemberModal(row = null) {
     document.getElementById('member-emergency').value = row.emergency_contact ?? '';
     document.getElementById('member-status').value = row.status ?? 'active';
   } else {
-    userGroup.classList.remove('d-none');
+    modeGroup.classList.remove('d-none');
+    document.getElementById('member-user-mode-new').checked = true;
+    setMemberUserMode('new');
     await Promise.all([populateUserOptions(), populateBranchOptions()]);
   }
   memberModal.show();
@@ -244,7 +283,29 @@ document.getElementById('member-form').addEventListener('submit', async (e) => {
   };
 
   if (!id) {
-    body.user_id = Number(document.getElementById('member-user').value);
+    const mode = document.querySelector('input[name="member-user-mode"]:checked')?.value || 'new';
+    if (mode === 'existing') {
+      body.user_id = Number(document.getElementById('member-user').value);
+      if (!body.user_id) {
+        errorBox.textContent = 'Please select a user.';
+        errorBox.classList.remove('d-none');
+        return;
+      }
+    } else {
+      const name    = document.getElementById('member-user-name').value.trim();
+      const surname = document.getElementById('member-user-surname').value.trim();
+      const email   = document.getElementById('member-user-email').value.trim();
+      if (!name || !surname || !email) {
+        errorBox.textContent = 'First name, last name, and email are required.';
+        errorBox.classList.remove('d-none');
+        return;
+      }
+      body.user = {
+        name, surname, email,
+        phone:    document.getElementById('member-user-phone').value.trim(),
+        password: document.getElementById('member-user-password').value,
+      };
+    }
   }
 
   try {
@@ -301,6 +362,9 @@ document.getElementById('members-import-file').addEventListener('change', async 
 
 document.addEventListener('DOMContentLoaded', () => {
   memberModal = new bootstrap.Modal(document.getElementById('member-modal'));
+  document.querySelectorAll('input[name="member-user-mode"]').forEach(r =>
+    r.addEventListener('change', e => setMemberUserMode(e.target.value))
+  );
   loadMembers(1);
 });
 </script>

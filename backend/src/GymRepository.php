@@ -20,16 +20,163 @@ final class GymRepository
     public function getDashboardStats(): array
     {
         return [
-            'totalMembers'     => $this->count("SELECT COUNT(*) AS c FROM members WHERE status='active'"),
-            'inactiveMembers'  => $this->count("SELECT COUNT(*) AS c FROM members WHERE status IN ('inactive','suspended')"),
-            'totalTrainers'    => $this->count("SELECT COUNT(*) AS c FROM trainers WHERE availability_status='active'"),
-            'totalClasses'     => $this->count('SELECT COUNT(*) AS c FROM classes'),
-            'totalEquipment'   => $this->count("SELECT COUNT(*) AS c FROM equipment WHERE status='active'"),
-            'expiringSoon'     => $this->count("SELECT COUNT(*) AS c FROM subscriptions WHERE status='active' AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)"),
-            'maintenanceDue'   => $this->count("SELECT COUNT(*) AS c FROM equipment WHERE status='maintenance'"),
-            'cityDistribution' => $this->getCityDistribution(6),
-            'topBranches'      => $this->getTopBranches(6),
+            'totalMembers'            => $this->count("SELECT COUNT(*) AS c FROM members WHERE status='active'"),
+            'inactiveMembers'         => $this->count("SELECT COUNT(*) AS c FROM members WHERE status IN ('inactive','suspended')"),
+            'totalTrainers'           => $this->count("SELECT COUNT(*) AS c FROM trainers WHERE availability_status='active'"),
+            'totalClasses'            => $this->count('SELECT COUNT(*) AS c FROM classes'),
+            'totalEquipment'          => $this->count("SELECT COUNT(*) AS c FROM equipment WHERE status='active'"),
+            'expiringSoon'            => $this->count("SELECT COUNT(*) AS c FROM subscriptions WHERE status='active' AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)"),
+            'maintenanceDue'          => $this->count("SELECT COUNT(*) AS c FROM equipment WHERE status='maintenance'"),
+            'cityDistribution'        => $this->getCityDistribution(6),
+            'topBranches'             => $this->getTopBranches(6),
+            'monthlyRevenue'          => $this->getMonthlyRevenue(),
+            'subscriptionBreakdown'   => $this->getSubscriptionBreakdown(),
+            'recentActivity'          => $this->getRecentActivity(8),
+            'monthlyRevenueChart'     => $this->getMonthlyRevenueChart(6),
+            'branchRevenue'           => $this->getBranchRevenue(6),
+            'packageProfitability'    => $this->getPackageProfitability(6),
         ];
+    }
+
+    public function getMonthlyRevenue(): float
+    {
+        $sql = "
+            SELECT COALESCE(SUM(amount), 0) AS c
+            FROM payments
+            WHERE status = 'paid'
+              AND YEAR(paid_at) = YEAR(CURDATE())
+              AND MONTH(paid_at) = MONTH(CURDATE())
+        ";
+        $result = $this->conn->query($sql);
+        $row    = $result->fetch_assoc();
+
+        return (float) ($row['c'] ?? 0);
+    }
+
+    public function getSubscriptionBreakdown(): array
+    {
+        $sql = "
+            SELECT status AS label, COUNT(*) AS value
+            FROM subscriptions
+            GROUP BY status
+            ORDER BY FIELD(status, 'active', 'expired', 'cancelled')
+        ";
+
+        return $this->fetchAll($sql);
+    }
+
+    public function getRecentActivity(int $limit = 8): array
+    {
+        $limit = $this->normalizeLimit($limit);
+        $sql = "
+            (
+                SELECT
+                    'New Member' AS type,
+                    CONCAT(u.name, ' ', u.surname) AS subject,
+                    b.branch_name AS detail,
+                    m.join_date AS happened_at
+                FROM members m
+                JOIN users u ON m.user_id = u.user_id
+                JOIN branches b ON m.branch_id = b.branch_id
+                ORDER BY m.join_date DESC
+                LIMIT {$limit}
+            )
+            UNION ALL
+            (
+                SELECT
+                    'New Subscription' AS type,
+                    CONCAT(u.name, ' ', u.surname) AS subject,
+                    p.package_name AS detail,
+                    CONCAT(s.start_date, ' 00:00:00') AS happened_at
+                FROM subscriptions s
+                JOIN members m ON s.member_id = m.member_id
+                JOIN users u ON m.user_id = u.user_id
+                JOIN packages p ON s.package_id = p.package_id
+                ORDER BY s.subscription_id DESC
+                LIMIT {$limit}
+            )
+            UNION ALL
+            (
+                SELECT
+                    'Payment Received' AS type,
+                    CONCAT(u.name, ' ', u.surname) AS subject,
+                    CONCAT('$', FORMAT(py.amount, 2)) AS detail,
+                    py.paid_at AS happened_at
+                FROM payments py
+                JOIN subscriptions s ON py.subscription_id = s.subscription_id
+                JOIN members m ON s.member_id = m.member_id
+                JOIN users u ON m.user_id = u.user_id
+                WHERE py.status = 'paid' AND py.paid_at IS NOT NULL
+                ORDER BY py.paid_at DESC
+                LIMIT {$limit}
+            )
+            ORDER BY happened_at DESC
+            LIMIT {$limit}
+        ";
+
+        return $this->fetchAll($sql);
+    }
+
+    public function getMonthlyRevenueChart(int $months = 6): array
+    {
+        $months = max(1, min(24, $months));
+        $sql = "
+            SELECT
+                DATE_FORMAT(paid_at, '%Y-%m') AS label,
+                COALESCE(SUM(amount), 0) AS value
+            FROM payments
+            WHERE status = 'paid'
+              AND paid_at >= DATE_SUB(CURDATE(), INTERVAL {$months} MONTH)
+            GROUP BY DATE_FORMAT(paid_at, '%Y-%m')
+            ORDER BY label ASC
+        ";
+
+        return $this->fetchAll($sql);
+    }
+
+    public function getBranchRevenue(int $limit = 6): array
+    {
+        $limit = $this->normalizeLimit($limit);
+        $sql = "
+            SELECT
+                b.branch_name AS label,
+                COALESCE(SUM(py.amount), 0) AS value
+            FROM branches b
+            LEFT JOIN members m ON m.branch_id = b.branch_id
+            LEFT JOIN subscriptions s ON s.member_id = m.member_id
+            LEFT JOIN payments py ON py.subscription_id = s.subscription_id
+                AND py.status = 'paid'
+                AND YEAR(py.paid_at) = YEAR(CURDATE())
+                AND MONTH(py.paid_at) = MONTH(CURDATE())
+            WHERE b.status = 'active'
+            GROUP BY b.branch_id, b.branch_name
+            ORDER BY value DESC
+            LIMIT {$limit}
+        ";
+
+        return $this->fetchAll($sql);
+    }
+
+    public function getPackageProfitability(int $limit = 6): array
+    {
+        $limit = $this->normalizeLimit($limit);
+        $sql = "
+            SELECT
+                p.package_name AS label,
+                COUNT(DISTINCT s.subscription_id) AS subscription_count,
+                COALESCE(SUM(py.amount), 0) AS total_revenue,
+                p.price AS unit_price
+            FROM packages p
+            LEFT JOIN subscriptions s ON s.package_id = p.package_id
+            LEFT JOIN payments py ON py.subscription_id = s.subscription_id
+                AND py.status = 'paid'
+            WHERE p.is_active = 1
+            GROUP BY p.package_id, p.package_name, p.price
+            ORDER BY total_revenue DESC
+            LIMIT {$limit}
+        ";
+
+        return $this->fetchAll($sql);
     }
 
     public function getCityDistribution(int $limit = 6): array
@@ -177,6 +324,10 @@ final class GymRepository
         $gender           = $this->conn->real_escape_string((string) ($data['gender'] ?? ''));
         $emergencyContact = $this->conn->real_escape_string((string) ($data['emergency_contact'] ?? ''));
         $status           = $this->conn->real_escape_string((string) ($data['status'] ?? 'active'));
+
+        if ($userId <= 0 && !empty($data['user'])) {
+            $userId = $this->createUser((array) $data['user']);
+        }
 
         if ($userId <= 0) {
             throw new InvalidArgumentException('user_id is required.');
@@ -357,6 +508,10 @@ final class GymRepository
         $branchId           = (int) ($data['branch_id'] ?? 0);
         $specialization     = $this->conn->real_escape_string(trim((string) ($data['specialization'] ?? '')));
         $availabilityStatus = $this->conn->real_escape_string(trim((string) ($data['availability_status'] ?? 'active')));
+
+        if ($userId <= 0 && !empty($data['user'])) {
+            $userId = $this->createUser((array) $data['user']);
+        }
 
         if ($userId <= 0) {
             throw new InvalidArgumentException('user_id is required.');
@@ -635,7 +790,7 @@ final class GymRepository
     // BRANCHES
     // -------------------------------------------------------------------------
 
-    public function listBranches(string $search = '', string $status = '', int $limit = 50, int $offset = 0): array
+    public function listBranches(string $search = '', string $status = '', int $limit = 50, int $offset = 0, bool $withStats = false): array
     {
         $search = trim($search);
         $status = trim($status);
@@ -647,24 +802,49 @@ final class GymRepository
 
         $where = 'WHERE 1=1';
         if ($safeSearch !== '') {
-            $where .= " AND (branch_name LIKE '%{$safeSearch}%' OR city LIKE '%{$safeSearch}%')";
+            $where .= " AND (b.branch_name LIKE '%{$safeSearch}%' OR b.city LIKE '%{$safeSearch}%')";
         }
         if ($safeStatus !== '') {
-            $where .= " AND status = '{$safeStatus}'";
+            $where .= " AND b.status = '{$safeStatus}'";
         }
 
-        $sql = "
-            SELECT
-                branch_id,
-                branch_name,
-                city,
-                phone,
-                status
-            FROM branches
-            {$where}
-            ORDER BY branch_id DESC
-            LIMIT {$limit} OFFSET {$offset}
-        ";
+        if ($withStats) {
+            $sql = "
+                SELECT
+                    b.branch_id,
+                    b.branch_name,
+                    b.city,
+                    b.phone,
+                    b.status,
+                    COUNT(DISTINCT m.member_id) AS member_count,
+                    COALESCE(SUM(CASE
+                        WHEN py.status = 'paid'
+                         AND YEAR(py.paid_at) = YEAR(CURDATE())
+                         AND MONTH(py.paid_at) = MONTH(CURDATE())
+                        THEN py.amount ELSE 0 END), 0) AS monthly_revenue
+                FROM branches b
+                LEFT JOIN members m ON m.branch_id = b.branch_id AND m.status = 'active'
+                LEFT JOIN subscriptions s ON s.member_id = m.member_id
+                LEFT JOIN payments py ON py.subscription_id = s.subscription_id
+                {$where}
+                GROUP BY b.branch_id, b.branch_name, b.city, b.phone, b.status
+                ORDER BY monthly_revenue DESC
+                LIMIT {$limit} OFFSET {$offset}
+            ";
+        } else {
+            $sql = "
+                SELECT
+                    branch_id,
+                    branch_name,
+                    city,
+                    phone,
+                    status
+                FROM branches b
+                {$where}
+                ORDER BY branch_id DESC
+                LIMIT {$limit} OFFSET {$offset}
+            ";
+        }
 
         return $this->fetchAll($sql);
     }
@@ -1176,6 +1356,43 @@ final class GymRepository
     // -------------------------------------------------------------------------
     // HELPERS
     // -------------------------------------------------------------------------
+
+    private function createUser(array $data): int
+    {
+        $name     = trim((string) ($data['name'] ?? ''));
+        $surname  = trim((string) ($data['surname'] ?? ''));
+        $email    = trim((string) ($data['email'] ?? ''));
+        $phone    = trim((string) ($data['phone'] ?? ''));
+        $password = (string) ($data['password'] ?? '');
+
+        if ($name === '' || $surname === '' || $email === '') {
+            throw new InvalidArgumentException('name, surname and email are required to create a user.');
+        }
+
+        if ($password === '') {
+            $password = 'Welcome123!';
+        }
+
+        $existing = $this->conn->query(
+            "SELECT user_id FROM users WHERE email = '" . $this->conn->real_escape_string($email) . "' LIMIT 1"
+        );
+        if ($existing && $existing->fetch_assoc()) {
+            throw new InvalidArgumentException('A user with this email already exists.');
+        }
+
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+
+        $stmt = $this->conn->prepare(
+            'INSERT INTO users (name, surname, email, phone, password_hash, status) VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $status = 'active';
+        $stmt->bind_param('ssssss', $name, $surname, $email, $phone, $hash, $status);
+        $stmt->execute();
+        $userId = (int) $this->conn->insert_id;
+        $stmt->close();
+
+        return $userId;
+    }
 
     private function normalizeLimit(int $limit): int
     {

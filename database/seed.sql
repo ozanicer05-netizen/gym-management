@@ -206,7 +206,12 @@ WHERE u.email LIKE 'trainer%@fitsphere.local';
 INSERT INTO members (user_id, branch_id, birth_date, gender, emergency_contact, join_date, status)
 SELECT
     u.user_id,
-    ((u.user_id - 1) % 35) + 1,
+    -- Weighted branch distribution: branches 1-5 (Istanbul hubs) get ~3x more members
+    CASE
+        WHEN u.user_id % 10 IN (0,1,2) THEN (u.user_id % 5) + 1
+        WHEN u.user_id % 10 IN (3,4)   THEN (u.user_id % 10) + 6
+        ELSE                                 (u.user_id % 20) + 16
+    END,
     DATE_SUB('2006-12-31', INTERVAL (u.user_id % 7300) DAY),
     CASE u.user_id % 3 WHEN 0 THEN 'male' WHEN 1 THEN 'female' ELSE 'other' END,
     CONCAT('Emergency Contact - +90 533 ', LPAD(4000000 + (u.user_id % 10000), 7, '0')),
@@ -226,11 +231,17 @@ INSERT INTO packages (package_name, duration_days, price, is_active) VALUES
 ('Semi-Annual Peak', 180, 7900.00, 1),
 ('Annual Pro', 365, 14500.00, 1);
 
--- Subscriptions
+-- Subscriptions (weighted: Monthly Basic most popular, Annual Pro least)
 INSERT INTO subscriptions (member_id, package_id, start_date, end_date, status)
 SELECT
     m.member_id,
-    (m.member_id % 4) + 1,
+    -- Monthly Basic ~45%, Quarterly Plus ~30%, Semi-Annual ~15%, Annual Pro ~10%
+    CASE
+        WHEN m.member_id % 20 IN (0,1,2,3,4,5,6,7,8) THEN 1
+        WHEN m.member_id % 20 IN (9,10,11,12,13,14)   THEN 2
+        WHEN m.member_id % 20 IN (15,16,17)            THEN 3
+        ELSE                                                 4
+    END,
     DATE_SUB(CURDATE(), INTERVAL (m.member_id % 60) DAY),
     CASE
         WHEN m.member_id % 10 = 0 THEN DATE_ADD(CURDATE(), INTERVAL ((m.member_id % 7) + 1) DAY)
@@ -241,7 +252,7 @@ SELECT
 FROM members m
 WHERE m.status IN ('active', 'inactive');
 
--- Payments
+-- Payments (spread across last 6 months, heavier in recent months)
 INSERT INTO payments (subscription_id, amount, payment_method, status, paid_at)
 SELECT
     s.subscription_id,
@@ -253,7 +264,15 @@ SELECT
         ELSE 'online'
     END,
     'paid',
-    DATE_SUB(NOW(), INTERVAL (s.subscription_id % 90) DAY)
+    -- More payments in recent months (current month ~40%, last month ~30%, older ~30%)
+    CASE
+        WHEN s.subscription_id % 10 IN (0,1,2,3) THEN
+            DATE_SUB(NOW(), INTERVAL (s.subscription_id % 25) DAY)
+        WHEN s.subscription_id % 10 IN (4,5,6) THEN
+            DATE_SUB(NOW(), INTERVAL (30 + s.subscription_id % 30) DAY)
+        ELSE
+            DATE_SUB(NOW(), INTERVAL (60 + s.subscription_id % 90) DAY)
+    END
 FROM subscriptions s
 JOIN packages p ON p.package_id = s.package_id;
 
