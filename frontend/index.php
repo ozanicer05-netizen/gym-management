@@ -134,9 +134,9 @@ async function loadDashboard() {
       <div class="col-12 col-xl-4">
         <div class="card insight-card h-100">
           <div class="card-body">
-            <div class="insight-title"><i class="bi bi-cash-stack me-1 text-success"></i>Revenue This Month</div>
+            <div class="insight-title"><i class="bi bi-cash-stack me-1 text-success"></i>Revenue (Last 30 Days)</div>
             <div class="insight-value text-success">$${monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <div class="insight-sub">Total confirmed payments in the current calendar month.</div>
+            <div class="insight-sub">Total confirmed payments in the last 30 days.</div>
           </div>
         </div>
       </div>
@@ -215,7 +215,7 @@ async function loadDashboard() {
       <div class="col-12 col-xl-6">
         <div class="card insight-card h-100">
           <div class="card-body">
-            <div class="insight-title"><i class="bi bi-building me-1 text-info"></i>Branch Revenue This Month</div>
+            <div class="insight-title"><i class="bi bi-building me-1 text-info"></i>Branch Revenue (Last 30 Days)</div>
             <div style="position:relative;height:220px;margin-top:12px;">
               <canvas id="branchRevenueChartCanvas"></canvas>
             </div>

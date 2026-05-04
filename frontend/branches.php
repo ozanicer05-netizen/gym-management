@@ -21,7 +21,7 @@ renderLayoutStart('Branches');
 
 <div class="card"><div class="card-body p-0"><div class="table-responsive">
 <table class="table table-hover mb-0">
-<thead><tr><th>#</th><th>Branch</th><th>City</th><th>Phone</th><th class="text-end">Members</th><th class="text-end">Revenue (This Month)</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+<thead><tr><th>#</th><th>Branch</th><th>City</th><th>Phone</th><th class="text-end">Members</th><th class="text-end">Revenue (Last 30 Days)</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
 <tbody id="branches-body"><tr><td colspan="8" class="text-center py-4 text-muted">Loading...</td></tr></tbody>
 </table>
 </div></div></div>

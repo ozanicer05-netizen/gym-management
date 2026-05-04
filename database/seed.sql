@@ -91,7 +91,7 @@ INSERT INTO branches (branch_name, address, city, phone, status) VALUES
 
 -- Base users
 INSERT INTO users (name, surname, email, phone, password_hash, status) VALUES
-('Ozan', 'Icer', 'ozan.admin@fitsphere.local', '+90 555 100 00 01', '$2y$12$X/jWhVLFiMBiIJe5QkXSveLxJ8z2V4P1sUJ/HeMojbmW9cT5cXrmy', 'active'),
+('Ozan', '', 'ozan.admin@fitsphere.local', '+90 555 100 00 01', '$2y$12$X/jWhVLFiMBiIJe5QkXSveLxJ8z2V4P1sUJ/HeMojbmW9cT5cXrmy', 'active'),
 ('Selin', 'Kaya', 'selin.manager@fitsphere.local', '+90 555 100 00 02', '$2y$12$WeMdr9WmnAD1tRDrJDg2tuBbrGBAfEhuA3oCMFVvPwA3LeksUgasW', 'active'),
 ('Sevval', '', 'sevval.admin@fitsphere.local', '+90 555 100 00 03', '$2y$12$tBrr6DsWwE.5HgLStARNXO6/l7vDBtTSNYjBGOMSowrCxLdbGZCWy', 'active'),
 ('Beren', '', 'beren.admin@fitsphere.local', '+90 555 100 00 04', '$2y$12$jgk7x78/1UP87I.7KAJmf.5EWfBOwh8uRIPKwKyepaQcCjXFlrwbG', 'active'),

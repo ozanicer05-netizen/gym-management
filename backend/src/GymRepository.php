@@ -44,8 +44,7 @@ final class GymRepository
             SELECT COALESCE(SUM(amount), 0) AS c
             FROM payments
             WHERE status = 'paid'
-              AND YEAR(paid_at) = YEAR(CURDATE())
-              AND MONTH(paid_at) = MONTH(CURDATE())
+                            AND paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ";
         $result = $this->conn->query($sql);
         $row    = $result->fetch_assoc();
@@ -146,8 +145,7 @@ final class GymRepository
             LEFT JOIN subscriptions s ON s.member_id = m.member_id
             LEFT JOIN payments py ON py.subscription_id = s.subscription_id
                 AND py.status = 'paid'
-                AND YEAR(py.paid_at) = YEAR(CURDATE())
-                AND MONTH(py.paid_at) = MONTH(CURDATE())
+                AND py.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
             WHERE b.status = 'active'
             GROUP BY b.branch_id, b.branch_name
             ORDER BY value DESC
@@ -819,8 +817,7 @@ final class GymRepository
                     COUNT(DISTINCT m.member_id) AS member_count,
                     COALESCE(SUM(CASE
                         WHEN py.status = 'paid'
-                         AND YEAR(py.paid_at) = YEAR(CURDATE())
-                         AND MONTH(py.paid_at) = MONTH(CURDATE())
+                         AND py.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
                         THEN py.amount ELSE 0 END), 0) AS monthly_revenue
                 FROM branches b
                 LEFT JOIN members m ON m.branch_id = b.branch_id AND m.status = 'active'
