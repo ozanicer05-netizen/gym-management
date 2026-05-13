@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GymTrack — Poster</title>
+<style>
+  @page {
+    size: 700mm 1000mm;
+    margin: 0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f172a;
+  }
+  .poster {
+    width: 700mm;
+    height: 1000mm;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    color: #f1f5f9;
+    padding: 22mm 20mm;
+    position: relative;
+    overflow: hidden;
+  }
+  .poster::before {
+    content: '';
+    position: absolute;
+    top: -100mm; right: -100mm;
+    width: 400mm; height: 400mm;
+    background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .poster::after {
+    content: '';
+    position: absolute;
+    bottom: -100mm; left: -100mm;
+    width: 400mm; height: 400mm;
+    background: radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .content { position: relative; z-index: 2; }
+
+  header {
+    text-align: center;
+    margin-bottom: 14mm;
+    padding-bottom: 10mm;
+    border-bottom: 0.4mm solid rgba(148, 163, 184, 0.2);
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8mm;
+    margin-bottom: 5mm;
+  }
+  .logo {
+    width: 28mm; height: 28mm;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 6mm;
+    line-height: 28mm;
+    font-size: 18mm;
+    text-align: center;
+    box-shadow: 0 6mm 18mm rgba(59,130,246,0.4);
+  }
+  h1 {
+    font-size: 38mm;
+    font-weight: 900;
+    letter-spacing: -1mm;
+    background: linear-gradient(90deg, #60a5fa, #c084fc, #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+  .tagline {
+    font-size: 7mm;
+    color: #94a3b8;
+    font-weight: 300;
+    letter-spacing: 0.5mm;
+    margin-top: 3mm;
+  }
+  .badges {
+    display: flex;
+    justify-content: center;
+    gap: 4mm;
+    margin-top: 6mm;
+    flex-wrap: wrap;
+  }
+  .badge {
+    background: rgba(59, 130, 246, 0.15);
+    border: 0.3mm solid rgba(96, 165, 250, 0.4);
+    color: #93c5fd;
+    padding: 2mm 5mm;
+    border-radius: 10mm;
+    font-size: 4mm;
+    font-weight: 600;
+  }
+
+  .section { margin-bottom: 12mm; }
+  h2 {
+    font-size: 9mm;
+    color: #60a5fa;
+    margin-bottom: 6mm;
+    padding-left: 5mm;
+    border-left: 1.5mm solid #3b82f6;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 4mm;
+  }
+  h2 .num {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+    width: 12mm; height: 12mm;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 12mm;
+    font-size: 6mm;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; }
+  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4mm; }
+  .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3mm; }
+
+  .card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 0.3mm solid rgba(148, 163, 184, 0.2);
+    border-radius: 3mm;
+    padding: 5mm;
+  }
+  .card-icon { font-size: 9mm; margin-bottom: 3mm; }
+  .card-title {
+    font-size: 5mm;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 2mm;
+  }
+  .card-text { font-size: 3.8mm; color: #cbd5e1; line-height: 1.4; }
+
+  .purpose-card {
+    background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
+    border: 0.3mm solid rgba(96, 165, 250, 0.3);
+    padding: 7mm;
+    border-radius: 4mm;
+  }
+  .purpose-card p {
+    font-size: 4.8mm;
+    line-height: 1.55;
+    color: #e2e8f0;
+  }
+  .purpose-card strong { color: #93c5fd; }
+
+  .stat {
+    text-align: center;
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15));
+    border: 0.3mm solid rgba(96, 165, 250, 0.3);
+    border-radius: 3mm;
+    padding: 5mm 2mm;
+  }
+  .stat-num {
+    font-size: 13mm;
+    font-weight: 900;
+    background: linear-gradient(135deg, #60a5fa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    margin-bottom: 1mm;
+  }
+  .stat-label {
+    font-size: 3.4mm;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.3mm;
+  }
+
+  .tech {
+    text-align: center;
+    background: rgba(30, 41, 59, 0.6);
+    border: 0.3mm solid rgba(148, 163, 184, 0.2);
+    border-radius: 3mm;
+    padding: 4mm 2mm;
+  }
+  .tech-icon { font-size: 8mm; margin-bottom: 2mm; }
+  .tech-name { font-size: 4mm; font-weight: 700; color: #f1f5f9; }
+  .tech-desc { font-size: 3mm; color: #94a3b8; margin-top: 1mm; }
+  .tech-ver { font-size: 2.8mm; color: #64748b; margin-top: 0.5mm; }
+
+  .er-wrap {
+    background: rgba(15, 23, 42, 0.8);
+    border: 0.3mm solid rgba(148, 163, 184, 0.2);
+    border-radius: 4mm;
+    padding: 6mm;
+  }
+  .entity {
+    background: rgba(59, 130, 246, 0.12);
+    border: 0.3mm solid #3b82f6;
+    border-radius: 2.5mm;
+    padding: 3mm 2mm;
+    text-align: center;
+  }
+  .entity.green { background: rgba(34, 197, 94, 0.12); border-color: #22c55e; }
+  .entity.purple { background: rgba(168, 85, 247, 0.12); border-color: #a855f7; }
+  .entity.orange { background: rgba(245, 158, 11, 0.12); border-color: #f59e0b; }
+  .entity.red { background: rgba(239, 68, 68, 0.12); border-color: #ef4444; }
+  .entity.cyan { background: rgba(6, 182, 212, 0.12); border-color: #06b6d4; }
+  .entity-name {
+    font-size: 4mm;
+    font-weight: 800;
+    margin-bottom: 1.5mm;
+    color: #fff;
+    letter-spacing: 0.3mm;
+  }
+  .entity-fields { font-size: 2.6mm; color: #cbd5e1; line-height: 1.3; }
+  .er-legend {
+    display: flex;
+    justify-content: center;
+    gap: 5mm;
+    margin-top: 4mm;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5mm;
+    font-size: 3mm;
+    color: #cbd5e1;
+  }
+  .legend-dot {
+    width: 3mm; height: 3mm;
+    border-radius: 50%;
+  }
+
+  .module {
+    background: rgba(30, 41, 59, 0.5);
+    border-left: 1mm solid #60a5fa;
+    border-radius: 2mm;
+    padding: 4mm;
+  }
+  .module-head {
+    display: flex;
+    align-items: center;
+    gap: 3mm;
+    margin-bottom: 2mm;
+  }
+  .module-icon { font-size: 7mm; }
+  .module-title { font-size: 5mm; font-weight: 700; color: #60a5fa; }
+  .module-desc { font-size: 3.5mm; color: #cbd5e1; line-height: 1.4; }
+  .module-list {
+    font-size: 3.2mm;
+    color: #94a3b8;
+    margin-top: 2mm;
+    line-height: 1.5;
+  }
+
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3mm;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 6mm;
+    border-radius: 4mm;
+    border: 0.3mm solid rgba(148, 163, 184, 0.2);
+  }
+  .arch-box {
+    flex: 1;
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15));
+    border: 0.3mm solid rgba(96, 165, 250, 0.3);
+    border-radius: 3mm;
+    padding: 5mm 3mm;
+    text-align: center;
+  }
+  .arch-icon { font-size: 12mm; margin-bottom: 2mm; }
+  .arch-name { font-size: 5mm; font-weight: 700; color: #f1f5f9; margin-bottom: 1mm; }
+  .arch-detail { font-size: 3.2mm; color: #94a3b8; line-height: 1.4; }
+  .arch-arrow {
+    font-size: 12mm;
+    color: #60a5fa;
+    flex-shrink: 0;
+  }
+
+  .security-item {
+    background: rgba(34, 197, 94, 0.08);
+    border-left: 1mm solid #22c55e;
+    border-radius: 2mm;
+    padding: 4mm;
+  }
+  .security-head {
+    display: flex;
+    align-items: center;
+    gap: 3mm;
+    margin-bottom: 2mm;
+  }
+  .security-icon { font-size: 7mm; }
+  .security-title { font-size: 4.5mm; font-weight: 700; color: #4ade80; }
+  .security-text { font-size: 3.3mm; color: #cbd5e1; line-height: 1.4; }
+
+  .feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 3mm;
+    background: rgba(30, 41, 59, 0.5);
+    padding: 4mm;
+    border-radius: 2.5mm;
+    border-left: 0.8mm solid #60a5fa;
+  }
+  .feature-icon { font-size: 7mm; flex-shrink: 0; }
+  .feature-text { font-size: 3.6mm; color: #f1f5f9; line-height: 1.4; }
+  .feature-text strong {
+    color: #60a5fa;
+    display: block;
+    margin-bottom: 1mm;
+    font-size: 4mm;
+  }
+</style>
+</head>
+<body>
+
+<div class="poster">
+  <div class="content">
+
+    <!-- HEADER -->
+    <header>
+      <div class="logo-row">
+        <div class="logo">🏋️</div>
+        <h1>GymTrack</h1>
+      </div>
+      <div class="tagline">Multi-Branch Gym Management System</div>
+      <div class="badges">
+        <div class="badge">PHP 8</div>
+        <div class="badge">MySQL</div>
+        <div class="badge">REST API</div>
+        <div class="badge">Bootstrap 5</div>
+        <div class="badge">Chart.js</div>
+        <div class="badge">Responsive</div>
+      </div>
+    </header>
+
+    <!-- 1. PURPOSE -->
+    <div class="section">
+      <h2><span class="num">1</span>Project Purpose</h2>
+      <div class="purpose-card">
+        <p>
+          <strong>GymTrack</strong> is a comprehensive database management system built on REST API
+          architecture with role-based authorization, enabling multi-branch gym chains to manage
+          <strong>member registrations, subscription packages, trainer assignments, class schedules,
+          equipment maintenance, and financial reporting</strong> through a single centralized web platform.
+          Administrators track branch performance, trainers manage class schedules, and members
+          monitor their subscription status in real time.
+        </p>
+      </div>
+    </div>
+
+    <!-- 2. NUMBERS -->
+    <div class="section">
+      <h2><span class="num">2</span>GymTrack in Numbers</h2>
+      <div class="grid-6">
+  <div class="stat"><div class="stat-num">20</div><div class="stat-label">Tables</div></div>
+        <div class="stat"><div class="stat-num">8</div><div class="stat-label">Modules</div></div>
+        <div class="stat"><div class="stat-num">40+</div><div class="stat-label">Endpoints</div></div>
+        <div class="stat"><div class="stat-num">3</div><div class="stat-label">Roles</div></div>
+        <div class="stat"><div class="stat-num">100%</div><div class="stat-label">CRUD</div></div>
+        <div class="stat"><div class="stat-num">4</div><div class="stat-label">Charts</div></div>
+      </div>
+    </div>
+
+    <!-- 3. TECHNOLOGIES -->
+    <div class="section">
+      <h2><span class="num">3</span>Technologies Used</h2>
+      <div class="grid-5">
+        <div class="tech">
+          <div class="tech-icon">🐘</div>
+          <div class="tech-name">PHP</div>
+          <div class="tech-desc">Backend Language</div>
+          <div class="tech-ver">v8.x</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">🗄️</div>
+          <div class="tech-name">MySQL</div>
+          <div class="tech-desc">Database</div>
+          <div class="tech-ver">mysqli</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">📜</div>
+          <div class="tech-name">JavaScript</div>
+          <div class="tech-desc">Frontend</div>
+          <div class="tech-ver">Vanilla</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">🎨</div>
+          <div class="tech-name">Bootstrap</div>
+          <div class="tech-desc">UI Framework</div>
+          <div class="tech-ver">v5.3</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">📊</div>
+          <div class="tech-name">Chart.js</div>
+          <div class="tech-desc">Visualizations</div>
+          <div class="tech-ver">v4.4</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">🔐</div>
+          <div class="tech-name">bcrypt</div>
+          <div class="tech-desc">Encryption</div>
+          <div class="tech-ver">PHP Built-in</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">🌐</div>
+          <div class="tech-name">HTML5</div>
+          <div class="tech-desc">Markup</div>
+          <div class="tech-ver">Semantic</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">💎</div>
+          <div class="tech-name">CSS3</div>
+          <div class="tech-desc">Styling</div>
+          <div class="tech-ver">Flexbox/Grid</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">🔌</div>
+          <div class="tech-name">REST API</div>
+          <div class="tech-desc">Architecture</div>
+          <div class="tech-ver">JSON</div>
+        </div>
+        <div class="tech">
+          <div class="tech-icon">📦</div>
+          <div class="tech-name">Bootstrap</div>
+          <div class="tech-desc">Icons</div>
+          <div class="tech-ver">v1.11</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. ARCHITECTURE -->
+    <div class="section">
+      <h2><span class="num">4</span>System Architecture</h2>
+      <div class="arch-flow">
+        <div class="arch-box">
+          <div class="arch-icon">🖥️</div>
+          <div class="arch-name">Frontend</div>
+          <div class="arch-detail">PHP + JavaScript<br>Bootstrap 5 + Chart.js</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">
+          <div class="arch-icon">🔌</div>
+          <div class="arch-name">REST API</div>
+          <div class="arch-detail">GET / POST<br>PUT / DELETE</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">
+          <div class="arch-icon">⚙️</div>
+          <div class="arch-name">GymRepository</div>
+          <div class="arch-detail">Business Logic<br>Data Access Layer</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">
+          <div class="arch-icon">💾</div>
+          <div class="arch-name">MySQL</div>
+          <div class="arch-detail">20 Tables<br>Relational Schema</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. DATABASE -->
+    <div class="section">
+  <h2><span class="num">5</span>Database Structure (20 Tables)</h2>
+      <div class="er-wrap">
+        <div class="grid-6" style="gap: 3mm;">
+          <div class="entity">
+            <div class="entity-name">USERS</div>
+            <div class="entity-fields">user_id 🔑<br>email<br>password<br>full_name</div>
+          </div>
+          <div class="entity">
+            <div class="entity-name">ROLES</div>
+            <div class="entity-fields">role_id 🔑<br>role_name<br>description</div>
+          </div>
+          <div class="entity">
+            <div class="entity-name">USER_ROLES</div>
+            <div class="entity-fields">user_id 🔗<br>role_id 🔗<br>assigned_at</div>
+          </div>
+          <div class="entity green">
+            <div class="entity-name">BRANCHES</div>
+            <div class="entity-fields">branch_id 🔑<br>branch_name<br>city, phone<br>status</div>
+          </div>
+          <div class="entity green">
+            <div class="entity-name">MEMBERS</div>
+            <div class="entity-fields">member_id 🔑<br>user_id 🔗<br>branch_id 🔗<br>join_date</div>
+          </div>
+          <div class="entity">
+            <div class="entity-name">PACKAGES</div>
+            <div class="entity-fields">package_id 🔑<br>name<br>price<br>duration</div>
+          </div>
+
+          <div class="entity">
+            <div class="entity-name">SUBSCRIPTIONS</div>
+            <div class="entity-fields">sub_id 🔑<br>member_id 🔗<br>package_id 🔗<br>status</div>
+          </div>
+          <div class="entity red">
+            <div class="entity-name">PAYMENTS</div>
+            <div class="entity-fields">payment_id 🔑<br>sub_id 🔗<br>amount<br>paid_at</div>
+          </div>
+          <div class="entity purple">
+            <div class="entity-name">TRAINERS</div>
+            <div class="entity-fields">trainer_id 🔑<br>user_id 🔗<br>branch_id 🔗<br>experience</div>
+          </div>
+          <div class="entity purple">
+            <div class="entity-name">SKILLS</div>
+            <div class="entity-fields">skill_id 🔑<br>skill_name</div>
+          </div>
+          <div class="entity purple">
+            <div class="entity-name">TRAINER_<br>SKILLS</div>
+            <div class="entity-fields">trainer_id 🔗<br>skill_id 🔗</div>
+          </div>
+          <div class="entity cyan">
+            <div class="entity-name">CLASSES</div>
+            <div class="entity-fields">class_id 🔑<br>trainer_id 🔗<br>branch_id 🔗<br>capacity</div>
+          </div>
+
+          <div class="entity cyan">
+            <div class="entity-name">CLASS_<br>SCHEDULES</div>
+            <div class="entity-fields">schedule_id 🔑<br>class_id 🔗<br>day, time</div>
+          </div>
+          <div class="entity cyan">
+            <div class="entity-name">CLASS_<br>RESERVATIONS</div>
+            <div class="entity-fields">res_id 🔑<br>schedule_id 🔗<br>member_id 🔗</div>
+          </div>
+          <div class="entity orange">
+            <div class="entity-name">EQUIPMENT</div>
+            <div class="entity-fields">equip_id 🔑<br>branch_id 🔗<br>category_id 🔗<br>status</div>
+          </div>
+          <div class="entity orange">
+            <div class="entity-name">EQUIPMENT_<br>CATEGORIES</div>
+            <div class="entity-fields">category_id 🔑<br>name</div>
+          </div>
+          <div class="entity orange">
+            <div class="entity-name">MAINTENANCE_<br>RECORDS</div>
+            <div class="entity-fields">record_id 🔑<br>equip_id 🔗<br>date, status</div>
+          </div>
+          <div class="entity">
+            <div class="entity-name">ATTENDANCE_<br>LOGS</div>
+            <div class="entity-fields">log_id 🔑<br>member_id 🔗<br>branch_id 🔗<br>checked_in</div>
+          </div>
+        </div>
+        <div class="er-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>User / Auth</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Branch / Member</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Trainer / Skills</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#06b6d4"></div>Class / Reservation</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Equipment / Maintenance</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Payment / Finance</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. MODULES -->
+    <div class="section">
+      <h2><span class="num">6</span>Core Modules</h2>
+      <div class="grid-2">
+        <div class="module">
+          <div class="module-head">
+            <div class="module-icon">👥</div>
+            <div class="module-title">Member Management</div>
+          </div>
+          <div class="module-desc">Member registration, profile management, and subscription tracking.</div>
+          <div class="module-list">• New member creation with inline user account<br>• Bulk Excel import / export<br>• Subscription history and active package view</div>
+        </div>
+        <div class="module">
+          <div class="module-head">
+            <div class="module-icon">💪</div>
+            <div class="module-title">Trainer Management</div>
+          </div>
+          <div class="module-desc">Trainer profiles, skill assignments, and class management.</div>
+          <div class="module-list">• Multi-skill assignment support<br>• Branch-based trainer filtering<br>• Experience and performance records</div>
+        </div>
+        <div class="module">
+          <div class="module-head">
+            <div class="module-icon">🏢</div>
+            <div class="module-title">Branch Management</div>
+          </div>
+          <div class="module-desc">Branch-level operations and revenue tracking.</div>
+          <div class="module-list">• Member count and revenue per branch<br>• Active / inactive status control<br>• City-based filtering</div>
+        </div>
+        <div class="module">
+          <div class="module-head">
+            <div class="module-icon">📅</div>
+            <div class="module-title">Class Management</div>
+          </div>
+          <div class="module-desc">Class scheduling and reservation system.</div>
+          <div class="module-list">• Weekly class schedules<br>• Capacity control and reservations<br>• Trainer / branch assignments</div>
+        </div>
+        <div class="module">
+          <div class="module-head">
+            <div class="module-icon">🔧</div>
+            <div class="module-title">Equipment Tracking</div>
+          </div>
+          <div class="module-desc">Equipment inventory and maintenance logs.</div>
+          <div class="module-list">• Category-based classification<br>• Maintenance history and status<br>• Branch-level distribution</div>
+        </div>
+        <div class="module">
+          <div class="module-head">
+            <div class="module-icon">📊</div>
+            <div class="module-title">Dashboard & Reporting</div>
+          </div>
+          <div class="module-desc">Real-time statistics and visual analytics.</div>
+          <div class="module-list">• Monthly revenue chart (Chart.js)<br>• Top package / branch analysis<br>• Recent activity timeline</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. SECURITY -->
+    <div class="section">
+      <h2><span class="num">7</span>Security Measures</h2>
+      <div class="grid-3">
+        <div class="security-item">
+          <div class="security-head">
+            <div class="security-icon">🔐</div>
+            <div class="security-title">Bcrypt Password Hashing</div>
+          </div>
+          <div class="security-text">Passwords are stored as one-way hashes. Even in a database breach, original passwords remain hidden. Each hash includes a random salt.</div>
+        </div>
+        <div class="security-item">
+          <div class="security-head">
+            <div class="security-icon">🛡️</div>
+            <div class="security-title">Prepared Statements</div>
+          </div>
+          <div class="security-text">All SQL queries are parameterized. Full protection against SQL Injection attacks. User input is never interpreted as SQL code.</div>
+        </div>
+        <div class="security-item">
+          <div class="security-head">
+            <div class="security-icon">🚪</div>
+            <div class="security-title">Auth Guard</div>
+          </div>
+          <div class="security-text">Every API endpoint passes through authentication checks. Unauthorized requests are rejected. Session-based login management.</div>
+        </div>
+        <div class="security-item">
+          <div class="security-head">
+            <div class="security-icon">🧹</div>
+            <div class="security-title">XSS Protection</div>
+          </div>
+          <div class="security-text">User input is HTML-escaped before render. Script injection is blocked. A helper escapeHtml() function is used throughout.</div>
+        </div>
+        <div class="security-item">
+          <div class="security-head">
+            <div class="security-icon">👮</div>
+            <div class="security-title">Role-Based Access</div>
+          </div>
+          <div class="security-text">Admin, Trainer, and Member roles hold distinct permissions. Each user only accesses resources they are authorized for.</div>
+        </div>
+        <div class="security-item">
+          <div class="security-head">
+            <div class="security-icon">✅</div>
+            <div class="security-title">Data Validation</div>
+          </div>
+          <div class="security-text">Email format checks, required field validation, and foreign key constraints preserve data integrity at every layer.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. BENEFITS -->
+    <div class="section">
+      <h2><span class="num">8</span>Key Benefits</h2>
+      <div class="grid-3">
+        <div class="feature">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-text"><strong>Fast Access</strong>Data across all branches is visible from a single panel in real time.</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📈</div>
+          <div class="feature-text"><strong>Data-Driven Decisions</strong>Branch and package performance is analyzed via interactive charts.</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💰</div>
+          <div class="feature-text"><strong>Financial Transparency</strong>Monthly revenue, payment history, and profitability tracking.</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔄</div>
+          <div class="feature-text"><strong>Automated Workflows</strong>Subscription expiry tracking and notification system integration.</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📱</div>
+          <div class="feature-text"><strong>Responsive Design</strong>Usable on desktop, tablet, and mobile devices.</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🌍</div>
+          <div class="feature-text"><strong>Scalable</strong>New branches and modules can be added effortlessly.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -13,6 +13,9 @@ try {
     $total = $repo->countMembers($search, $status);
     $rows = $repo->listMembers($search, $status, max(1, $total), 0);
 
+    @ini_set('display_errors', '0');
+    error_reporting(0);
+
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="members_export.csv"');
 
@@ -21,7 +24,9 @@ try {
         throw new RuntimeException('Unable to open output stream.');
     }
 
-    fputcsv($out, ['member_id', 'name', 'surname', 'email', 'phone', 'branch_name', 'join_date', 'status']);
+    fprintf($out, "\xEF\xBB\xBF");
+
+    fputcsv($out, ['member_id', 'name', 'surname', 'email', 'phone', 'branch_name', 'join_date', 'status'], ',', '"', '');
     foreach ($rows as $row) {
         fputcsv($out, [
             $row['member_id'] ?? '',
@@ -32,7 +37,7 @@ try {
             $row['branch_name'] ?? '',
             $row['join_date'] ?? '',
             $row['status'] ?? '',
-        ]);
+        ], ',', '"', '');
     }
 
     fclose($out);
