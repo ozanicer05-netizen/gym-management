@@ -17,6 +17,7 @@ function renderLayoutStart(string $pageTitle): void
     $authUser = $_SESSION['auth_user'];
     $items = [
         'Dashboard' => '/frontend/index.php',
+        'Users' => '/frontend/users.php',
         'Members' => '/frontend/members.php',
         'Trainers' => '/frontend/trainers.php',
         'Classes' => '/frontend/classes.php',

@@ -41,7 +41,6 @@ if (!empty($_SESSION['auth_user'])) {
                     </form>
 
                     <div id="login-error" class="alert alert-danger mt-3 d-none"></div>
-                    <div class="text-muted small mt-3">Seed default: <code>ozan.admin@fitsphere.local</code> / <code>Admin123!</code></div>
                 </div>
             </div>
         </div>

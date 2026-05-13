@@ -1354,6 +1354,110 @@ final class GymRepository
     // HELPERS
     // -------------------------------------------------------------------------
 
+    public function listUsers(string $search = '', string $status = '', int $limit = 50, int $offset = 0): array
+    {
+        $limit  = $this->normalizeLimit($limit);
+        $offset = $this->normalizeOffset($offset);
+        $safeSearch = $this->conn->real_escape_string(trim($search));
+        $safeStatus = $this->conn->real_escape_string(trim($status));
+
+        $where = 'WHERE 1=1';
+        if ($safeSearch !== '') {
+            $where .= " AND (u.name LIKE '%{$safeSearch}%' OR u.surname LIKE '%{$safeSearch}%' OR u.email LIKE '%{$safeSearch}%')";
+        }
+        if ($safeStatus !== '') {
+            $where .= " AND u.status = '{$safeStatus}'";
+        }
+
+        $sql = "
+            SELECT
+                u.user_id,
+                u.name,
+                u.surname,
+                u.email,
+                u.phone,
+                u.status,
+                COALESCE(GROUP_CONCAT(DISTINCT r.role_name ORDER BY r.role_name SEPARATOR ', '), '') AS roles,
+                CASE WHEN m.member_id IS NULL THEN 0 ELSE 1 END AS is_member,
+                CASE WHEN t.trainer_id IS NULL THEN 0 ELSE 1 END AS is_trainer
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.user_id
+            LEFT JOIN roles r ON r.role_id = ur.role_id
+            LEFT JOIN members m ON m.user_id = u.user_id
+            LEFT JOIN trainers t ON t.user_id = u.user_id
+            {$where}
+            GROUP BY u.user_id
+            ORDER BY u.user_id DESC
+            LIMIT {$limit} OFFSET {$offset}
+        ";
+
+        return $this->fetchAll($sql);
+    }
+
+    public function countUsers(string $search = '', string $status = ''): int
+    {
+        $safeSearch = $this->conn->real_escape_string(trim($search));
+        $safeStatus = $this->conn->real_escape_string(trim($status));
+
+        $where = 'WHERE 1=1';
+        if ($safeSearch !== '') {
+            $where .= " AND (u.name LIKE '%{$safeSearch}%' OR u.surname LIKE '%{$safeSearch}%' OR u.email LIKE '%{$safeSearch}%')";
+        }
+        if ($safeStatus !== '') {
+            $where .= " AND u.status = '{$safeStatus}'";
+        }
+
+        return $this->count("SELECT COUNT(*) AS c FROM users u {$where}");
+    }
+
+    public function getUserById(int $userId): ?array
+    {
+        $userId = (int) $userId;
+        $result = $this->conn->query("
+            SELECT u.user_id, u.name, u.surname, u.email, u.phone, u.status
+            FROM users u WHERE u.user_id = {$userId} LIMIT 1
+        ");
+        $row = $result->fetch_assoc();
+        return $row ?: null;
+    }
+
+    public function updateUser(int $userId, array $data): array
+    {
+        $existing = $this->getUserById($userId);
+        if (!$existing) {
+            throw new InvalidArgumentException('User not found.');
+        }
+
+        $name    = $this->conn->real_escape_string((string) ($data['name']    ?? $existing['name']));
+        $surname = $this->conn->real_escape_string((string) ($data['surname'] ?? $existing['surname']));
+        $phone   = $this->conn->real_escape_string((string) ($data['phone']   ?? $existing['phone']));
+        $status  = $this->conn->real_escape_string((string) ($data['status']  ?? $existing['status']));
+
+        $this->conn->query("
+            UPDATE users
+            SET name = '{$name}', surname = '{$surname}', phone = '{$phone}', status = '{$status}'
+            WHERE user_id = {$userId}
+        ");
+
+        return $this->getUserById($userId);
+    }
+
+    public function deleteUser(int $userId): void
+    {
+        $userId = (int) $userId;
+        $existing = $this->getUserById($userId);
+        if (!$existing) {
+            throw new InvalidArgumentException('User not found.');
+        }
+        $this->conn->query("DELETE FROM users WHERE user_id = {$userId}");
+    }
+
+    public function createUserOnly(array $data): array
+    {
+        $userId = $this->createUser($data);
+        return $this->getUserById($userId);
+    }
+
     private function createUser(array $data): int
     {
         $name     = trim((string) ($data['name'] ?? ''));

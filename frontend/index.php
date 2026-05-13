@@ -47,13 +47,13 @@ renderLayoutStart('Dashboard');
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 const statItems = [
-  { key: 'totalMembers',   label: 'Active Members',    className: 'stat-card stat-members',     icon: 'bi-people-fill' },
-  { key: 'inactiveMembers',label: 'Passive Members',   className: 'stat-card stat-passive',     icon: 'bi-person-x-fill' },
-  { key: 'totalTrainers',  label: 'Active Trainers',   className: 'stat-card stat-trainers',    icon: 'bi-person-badge-fill' },
-  { key: 'totalClasses',   label: 'Classes',           className: 'stat-card stat-classes',     icon: 'bi-calendar2-week-fill' },
-  { key: 'totalEquipment', label: 'Active Equipment',  className: 'stat-card stat-equipment',   icon: 'bi-tools' },
-  { key: 'expiringSoon',   label: 'Expiring in 7 Days',className: 'stat-card stat-expiring',    icon: 'bi-hourglass-split' },
-  { key: 'maintenanceDue', label: 'In Maintenance',    className: 'stat-card stat-maintenance', icon: 'bi-cone-striped' },
+  { key: 'totalMembers',   label: 'Active Members',    className: 'stat-card stat-members',     icon: 'bi-people-fill',         href: '/gym/frontend/members.php' },
+  { key: 'inactiveMembers',label: 'Passive Members',   className: 'stat-card stat-passive',     icon: 'bi-person-x-fill',       href: '/gym/frontend/members.php' },
+  { key: 'totalTrainers',  label: 'Active Trainers',   className: 'stat-card stat-trainers',    icon: 'bi-person-badge-fill',   href: '/gym/frontend/trainers.php' },
+  { key: 'totalClasses',   label: 'Classes',           className: 'stat-card stat-classes',     icon: 'bi-calendar2-week-fill', href: '/gym/frontend/classes.php' },
+  { key: 'totalEquipment', label: 'Active Equipment',  className: 'stat-card stat-equipment',   icon: 'bi-tools',               href: '/gym/frontend/equipment.php' },
+  { key: 'expiringSoon',   label: 'Expiring in 7 Days',className: 'stat-card stat-expiring',    icon: 'bi-hourglass-split',     href: '/gym/frontend/subscriptions.php' },
+  { key: 'maintenanceDue', label: 'In Maintenance',    className: 'stat-card stat-maintenance', icon: 'bi-cone-striped',        href: '/gym/frontend/equipment.php' },
 ];
 
 const activityIcons = {
@@ -100,13 +100,14 @@ async function loadDashboard() {
     // ── Stat Cards ──────────────────────────────────────────────────────────
     statsRow.innerHTML = statItems.map(item => `
       <div class="col-6 col-lg-4">
-        <div class="card ${item.className}">
+        <div class="card ${item.className} dashboard-clickable">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div class="h3 mb-0">${Number(data[item.key] ?? 0)}</div>
               <i class="bi ${item.icon} stat-icon"></i>
             </div>
             <div class="stat-label">${item.label}</div>
+            <a class="stretched-link" href="${item.href}"></a>
           </div>
         </div>
       </div>
@@ -132,20 +133,22 @@ async function loadDashboard() {
 
     revenueRow.innerHTML = `
       <div class="col-12 col-xl-4">
-        <div class="card insight-card h-100">
+        <div class="card insight-card h-100 dashboard-clickable">
           <div class="card-body">
             <div class="insight-title"><i class="bi bi-cash-stack me-1 text-success"></i>Revenue (Last 30 Days)</div>
             <div class="insight-value text-success">$${monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <div class="insight-sub">Total confirmed payments in the last 30 days.</div>
+            <a class="stretched-link" href="/gym/frontend/branches.php"></a>
           </div>
         </div>
       </div>
       <div class="col-12 col-xl-8">
-        <div class="card insight-card h-100">
+        <div class="card insight-card h-100 dashboard-clickable">
           <div class="card-body">
             <div class="insight-title"><i class="bi bi-pie-chart me-1 text-primary"></i>Subscription Status Breakdown</div>
             <div class="progress mt-3 mb-2" style="height:24px;border-radius:6px;">${breakdownBars || '<div class="progress-bar bg-secondary" style="width:100%">No data</div>'}</div>
             <div class="d-grid gap-1 mt-2">${breakdownList || '<span class="text-muted small">No subscription data.</span>'}</div>
+            <a class="stretched-link" href="/gym/frontend/subscriptions.php"></a>
           </div>
         </div>
       </div>
@@ -203,42 +206,46 @@ async function loadDashboard() {
     // ── Charts ───────────────────────────────────────────────────────────────
     chartsRow.innerHTML = `
       <div class="col-12 col-xl-6">
-        <div class="card insight-card h-100">
+        <div class="card insight-card h-100 dashboard-clickable">
           <div class="card-body">
             <div class="insight-title"><i class="bi bi-bar-chart-fill me-1 text-primary"></i>Monthly Revenue (Last 6 Months)</div>
             <div style="position:relative;height:220px;margin-top:12px;">
               <canvas id="revenueChartCanvas"></canvas>
             </div>
+            <a class="stretched-link" href="/gym/frontend/subscriptions.php"></a>
           </div>
         </div>
       </div>
       <div class="col-12 col-xl-6">
-        <div class="card insight-card h-100">
+        <div class="card insight-card h-100 dashboard-clickable">
           <div class="card-body">
             <div class="insight-title"><i class="bi bi-building me-1 text-info"></i>Branch Revenue (Last 30 Days)</div>
             <div style="position:relative;height:220px;margin-top:12px;">
               <canvas id="branchRevenueChartCanvas"></canvas>
             </div>
+            <a class="stretched-link" href="/gym/frontend/branches.php"></a>
           </div>
         </div>
       </div>
       <div class="col-12 col-xl-6">
-        <div class="card insight-card h-100">
+        <div class="card insight-card h-100 dashboard-clickable">
           <div class="card-body">
             <div class="insight-title"><i class="bi bi-trophy-fill me-1 text-warning"></i>Most Profitable Packages</div>
             <div style="position:relative;height:220px;margin-top:12px;">
               <canvas id="packageChartCanvas"></canvas>
             </div>
+            <a class="stretched-link" href="/gym/frontend/subscriptions.php"></a>
           </div>
         </div>
       </div>
       <div class="col-12 col-xl-6">
-        <div class="card insight-card h-100">
+        <div class="card insight-card h-100 dashboard-clickable">
           <div class="card-body">
             <div class="insight-title"><i class="bi bi-people-fill me-1 text-success"></i>Top Branches by Members</div>
             <div style="position:relative;height:220px;margin-top:12px;">
               <canvas id="branchChartCanvas"></canvas>
             </div>
+            <a class="stretched-link" href="/gym/frontend/branches.php"></a>
           </div>
         </div>
       </div>
@@ -379,18 +386,20 @@ async function loadDashboard() {
 
     analyticsRow.innerHTML = `
       <div class="col-12 col-xl-4">
-        <div class="card insight-card h-100">
+        <div class="card insight-card h-100 dashboard-clickable">
           <div class="card-body">
             <div class="insight-title"><i class="bi bi-geo me-1 text-warning"></i>Top Cities by Active Members</div>
             <ul class="list-unstyled mb-0 mt-2">${cityList}</ul>
+            <a class="stretched-link" href="/gym/frontend/branches.php"></a>
           </div>
         </div>
       </div>
       <div class="col-12 col-xl-8">
-        <div class="card insight-card h-100">
+        <div class="card insight-card h-100 dashboard-clickable">
           <div class="card-body">
             <div class="insight-title"><i class="bi bi-clock-history me-1 text-secondary"></i>Recent Activity</div>
             <ul class="list-unstyled mb-0 mt-1">${activityList}</ul>
+            <a class="stretched-link" href="/gym/frontend/members.php"></a>
           </div>
         </div>
       </div>
