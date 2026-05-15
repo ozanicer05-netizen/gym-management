@@ -23,7 +23,7 @@ try {
     $safeEmail = $conn->real_escape_string($email);
 
     $sql = "
-        SELECT u.user_id, u.name, u.surname, u.email, u.password_hash, r.role_name
+        SELECT u.user_id, u.name, u.surname, u.email, u.password_hash, u.branch_id, r.role_name
         FROM users u
         LEFT JOIN user_roles ur ON ur.user_id = u.user_id
         LEFT JOIN roles r ON r.role_id = ur.role_id
@@ -44,10 +44,11 @@ try {
     }
 
     $_SESSION['auth_user'] = [
-        'id' => (int) $user['user_id'],
-        'name' => trim(((string) $user['name']) . ' ' . ((string) $user['surname'])),
-        'email' => (string) $user['email'],
-        'role' => (string) ($user['role_name'] ?? 'member'),
+        'id'        => (int) $user['user_id'],
+        'name'      => trim(((string) $user['name']) . ' ' . ((string) $user['surname'])),
+        'email'     => (string) $user['email'],
+        'role'      => (string) ($user['role_name'] ?? 'member'),
+        'branch_id' => $user['branch_id'] !== null ? (int) $user['branch_id'] : null,
     ];
 
     ApiResponse::ok($_SESSION['auth_user']);

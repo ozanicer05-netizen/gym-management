@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(30),
     password_hash VARCHAR(255) NOT NULL,
     status ENUM('active', 'inactive', 'blocked') NOT NULL DEFAULT 'active',
+    branch_id INT DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 

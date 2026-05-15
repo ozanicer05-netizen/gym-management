@@ -5,12 +5,17 @@ declare(strict_types=1);
 require_once __DIR__ . '/../src/bootstrap.php';
 AuthGuard::requireApiAuth();
 
-$method = $_SERVER['REQUEST_METHOD'];
-$search = (string) ($_GET['search'] ?? '');
-$status = (string) ($_GET['status'] ?? '');
-$limit  = max(1, min(200, (int) ($_GET['limit'] ?? 50)));
-$page   = max(1, (int) ($_GET['page'] ?? 1));
-$offset = ($page - 1) * $limit;
+$method   = $_SERVER['REQUEST_METHOD'];
+$search   = (string) ($_GET['search'] ?? '');
+$status   = (string) ($_GET['status'] ?? '');
+$limit    = max(1, min(200, (int) ($_GET['limit'] ?? 50)));
+$page     = max(1, (int) ($_GET['page'] ?? 1));
+$offset   = ($page - 1) * $limit;
+
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+$authUser       = $_SESSION['auth_user'] ?? [];
+$sessionBranch  = isset($authUser['branch_id']) && $authUser['branch_id'] !== null
+                  ? (int) $authUser['branch_id'] : null;
 
 try {
     $repo = new GymRepository();
@@ -27,8 +32,8 @@ try {
             exit;
         }
 
-        $rows       = $repo->listMembers($search, $status, $limit, $offset);
-        $total      = $repo->countMembers($search, $status);
+        $rows       = $repo->listMembers($search, $status, $limit, $offset, $sessionBranch);
+        $total      = $repo->countMembers($search, $status, $sessionBranch);
         $totalPages = max(1, (int) ceil($total / $limit));
 
         ApiResponse::ok($rows, [

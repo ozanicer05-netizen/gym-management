@@ -217,7 +217,7 @@ final class GymRepository
     // MEMBERS
     // -------------------------------------------------------------------------
 
-    public function listMembers(string $search = '', string $status = '', int $limit = 50, int $offset = 0): array
+    public function listMembers(string $search = '', string $status = '', int $limit = 50, int $offset = 0, ?int $branchId = null): array
     {
         $search = trim($search);
         $status = trim($status);
@@ -233,6 +233,9 @@ final class GymRepository
         }
         if ($safeStatus !== '') {
             $where .= " AND m.status = '{$safeStatus}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND m.branch_id = " . (int) $branchId;
         }
 
         $sql = "
@@ -256,7 +259,7 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function countMembers(string $search = '', string $status = ''): int
+    public function countMembers(string $search = '', string $status = '', ?int $branchId = null): int
     {
         $search = trim($search);
         $status = trim($status);
@@ -270,6 +273,9 @@ final class GymRepository
         }
         if ($safeStatus !== '') {
             $where .= " AND m.status = '{$safeStatus}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND m.branch_id = " . (int) $branchId;
         }
 
         $sql = "
@@ -406,7 +412,7 @@ final class GymRepository
     // TRAINERS
     // -------------------------------------------------------------------------
 
-    public function listTrainers(string $search = '', string $status = '', int $limit = 50, int $offset = 0): array
+    public function listTrainers(string $search = '', string $status = '', int $limit = 50, int $offset = 0, ?int $branchId = null): array
     {
         $search = trim($search);
         $status = trim($status);
@@ -422,6 +428,9 @@ final class GymRepository
         }
         if ($safeStatus !== '') {
             $where .= " AND t.availability_status = '{$safeStatus}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND t.branch_id = " . (int) $branchId;
         }
 
         $sql = "
@@ -445,7 +454,7 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function countTrainers(string $search = '', string $status = ''): int
+    public function countTrainers(string $search = '', string $status = '', ?int $branchId = null): int
     {
         $search = trim($search);
         $status = trim($status);
@@ -459,6 +468,9 @@ final class GymRepository
         }
         if ($safeStatus !== '') {
             $where .= " AND t.availability_status = '{$safeStatus}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND t.branch_id = " . (int) $branchId;
         }
 
         $sql = "

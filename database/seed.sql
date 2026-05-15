@@ -1,6 +1,5 @@
--- GymTrack Sample Seed Data (English)
--- 35 branches, branded naming, real person names, and high-volume records.
--- Safe to run multiple times.
+-- GymTrack Sample Seed Data
+-- 35 branches, 1 general admin, 35 branch managers, ~1000 members, 140 trainers
 
 USE gym_db;
 
@@ -51,7 +50,7 @@ ALTER TABLE feedback AUTO_INCREMENT = 1;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- 35 branches (Location + Brand)
+-- 35 branches
 INSERT INTO branches (branch_name, address, city, phone, status) VALUES
 ('Kadikoy FitSphere', 'Moda Caddesi No:14', 'Istanbul', '+90 216 520 00 01', 'active'),
 ('Besiktas FitSphere', 'Barbaros Bulvari No:88', 'Istanbul', '+90 212 520 00 02', 'active'),
@@ -89,36 +88,53 @@ INSERT INTO branches (branch_name, address, city, phone, status) VALUES
 ('Seyhan FitSphere', 'Ataturk Caddesi No:83', 'Adana', '+90 322 520 00 34', 'active'),
 ('Izmit FitSphere', 'Yuruyus Yolu No:91', 'Kocaeli', '+90 262 520 00 35', 'active');
 
--- Base users
-INSERT INTO users (name, surname, email, phone, password_hash, status) VALUES
-('Ozan', '', 'ozan.admin@fitsphere.local', '+90 555 100 00 01', '$2y$12$X/jWhVLFiMBiIJe5QkXSveLxJ8z2V4P1sUJ/HeMojbmW9cT5cXrmy', 'active'),
-('Selin', 'Kaya', 'selin.manager@fitsphere.local', '+90 555 100 00 02', '$2y$12$WeMdr9WmnAD1tRDrJDg2tuBbrGBAfEhuA3oCMFVvPwA3LeksUgasW', 'active'),
-('Sevval', '', 'sevval.admin@fitsphere.local', '+90 555 100 00 03', '$2y$12$tBrr6DsWwE.5HgLStARNXO6/l7vDBtTSNYjBGOMSowrCxLdbGZCWy', 'active'),
-('Beren', '', 'beren.admin@fitsphere.local', '+90 555 100 00 04', '$2y$12$jgk7x78/1UP87I.7KAJmf.5EWfBOwh8uRIPKwKyepaQcCjXFlrwbG', 'active'),
-('Nisa', '', 'nisa.admin@fitsphere.local', '+90 555 100 00 05', '$2y$12$wzSBFyBmkI2O1sztpg.XY.xh56mpaBQTiJ5VweOMr9h3SZgds.ojG', 'active'),
-('Nehir', '', 'nehir.admin@fitsphere.local', '+90 555 100 00 06', '$2y$12$5Xxl9BnJhDvJRjlORPZyXuTTPH1aQXkoSql6avkntlQ51g7GcraUu', 'active');
-
 -- Roles
 INSERT INTO roles (role_name, description) VALUES
-('admin', 'System administrator'),
-('manager', 'Branch operations manager'),
+('admin', 'System administrator - sees all branches'),
+('manager', 'Branch manager - sees own branch only'),
 ('member', 'Gym member'),
-('trainer', 'Fitness trainer'),
-('developer', 'Software developer / technical team');
+('trainer', 'Fitness trainer');
 
+-- General admin (branch_id = NULL → sees everything)
+INSERT INTO users (name, surname, email, phone, password_hash, status, branch_id) VALUES
+('Admin', 'GymTrack', 'admin@gymtrack.local', '+90 555 000 00 01',
+ '$2y$12$X/jWhVLFiMBiIJe5QkXSveLxJ8z2V4P1sUJ/HeMojbmW9cT5cXrmy', 'active', NULL);
+
+-- 35 branch managers (branch_id = their branch, user_id 2-36)
+INSERT INTO users (name, surname, email, phone, password_hash, status, branch_id)
+SELECT
+    CONCAT('Manager', b.branch_id),
+    'FitSphere',
+    CONCAT('manager', LPAD(b.branch_id, 2, '0'), '@gymtrack.local'),
+    CONCAT('+90 555 ', LPAD(200000 + b.branch_id, 6, '0')),
+    '$2y$12$X/jWhVLFiMBiIJe5QkXSveLxJ8z2V4P1sUJ/HeMojbmW9cT5cXrmy',
+    'active',
+    b.branch_id
+FROM branches b;
+
+-- Role assignments
+INSERT INTO user_roles (user_id, role_id) VALUES (1, 1); -- admin@gymtrack.local → admin
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.user_id, 2
+FROM users u
+WHERE u.email LIKE 'manager%@gymtrack.local';
+
+-- Name pools
 DROP TEMPORARY TABLE IF EXISTS tmp_seq;
 CREATE TEMPORARY TABLE tmp_seq (n INT PRIMARY KEY);
 INSERT INTO tmp_seq (n)
-SELECT (th.d * 1000) + (h.d * 100) + (t.d * 10) + o.d + 1 AS n
+SELECT (h.d * 100) + (t.d * 10) + o.d + 1 AS n
 FROM
-    (SELECT 0 d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) o
+    (SELECT 0 d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+     UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) o
     CROSS JOIN
-    (SELECT 0 d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t
+    (SELECT 0 d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+     UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t
     CROSS JOIN
-    (SELECT 0 d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) h
-    CROSS JOIN
-    (SELECT 0 d UNION ALL SELECT 1) th
-WHERE (th.d * 1000) + (h.d * 100) + (t.d * 10) + o.d + 1 <= 1500;
+    (SELECT 0 d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+     UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) h
+WHERE (h.d * 100) + (t.d * 10) + o.d + 1 <= 1200;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_first_names;
 CREATE TEMPORARY TABLE tmp_first_names (id INT PRIMARY KEY, name VARCHAR(100) NOT NULL);
@@ -138,54 +154,46 @@ INSERT INTO tmp_last_names (id, surname) VALUES
 (25,'Karaca'),(26,'Korkmaz'),(27,'Ekinci'),(28,'Bulut'),(29,'Toprak'),(30,'Akin'),(31,'Ates'),(32,'Kaplan'),
 (33,'Erol'),(34,'Bayrak'),(35,'Karaman'),(36,'Oz'),(37,'Sari'),(38,'Akca'),(39,'Ucar'),(40,'Keskin');
 
--- Trainer users with real names
-INSERT INTO users (name, surname, email, phone, password_hash, status)
+-- 140 trainer users (branch_id = NULL, they are linked via trainers table)
+INSERT INTO users (name, surname, email, phone, password_hash, status, branch_id)
 SELECT
-    fn.name,
-    ln.surname,
+    fn.name, ln.surname,
     CONCAT('trainer', LPAD(s.n, 4, '0'), '@fitsphere.local'),
     CONCAT('+90 530 ', LPAD(7000000 + s.n, 7, '0')),
     '$2y$10$demoTrainerHashxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    CASE WHEN s.n % 13 = 0 THEN 'inactive' ELSE 'active' END
+    CASE WHEN s.n % 13 = 0 THEN 'inactive' ELSE 'active' END,
+    NULL
 FROM tmp_seq s
 JOIN tmp_first_names fn ON fn.id = ((s.n - 1) % 40) + 1
 JOIN tmp_last_names ln ON ln.id = (((s.n - 1) DIV 7) % 40) + 1
 WHERE s.n <= 140;
 
--- Member users with real names
-INSERT INTO users (name, surname, email, phone, password_hash, status)
+-- 1000 member users (branch_id = NULL)
+INSERT INTO users (name, surname, email, phone, password_hash, status, branch_id)
 SELECT
-    fn.name,
-    ln.surname,
+    fn.name, ln.surname,
     CONCAT('member', LPAD(s.n, 5, '0'), '@fitsphere.local'),
     CONCAT('+90 532 ', LPAD(6000000 + s.n, 7, '0')),
     '$2y$10$demoMemberHashxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    CASE WHEN s.n % 23 = 0 THEN 'inactive' ELSE 'active' END
+    CASE WHEN s.n % 23 = 0 THEN 'inactive' ELSE 'active' END,
+    NULL
 FROM tmp_seq s
 JOIN tmp_first_names fn ON fn.id = (((s.n + 11) - 1) % 40) + 1
 JOIN tmp_last_names ln ON ln.id = ((((s.n + 5) - 1) DIV 5) % 40) + 1
-WHERE s.n <= 1300;
+WHERE s.n <= 1000;
 
--- Role mappings
-INSERT INTO user_roles (user_id, role_id) VALUES (1, 1), (2, 2);
-
-INSERT INTO user_roles (user_id, role_id) VALUES (3, 1), (4, 1), (5, 1), (6, 1);
+-- Role assignments for trainers and members
+INSERT INTO user_roles (user_id, role_id)
+SELECT user_id, 4 FROM users WHERE email LIKE 'trainer%@fitsphere.local';
 
 INSERT INTO user_roles (user_id, role_id)
-SELECT user_id, 4
-FROM users
-WHERE email LIKE 'trainer%@fitsphere.local';
-
-INSERT INTO user_roles (user_id, role_id)
-SELECT user_id, 3
-FROM users
-WHERE email LIKE 'member%@fitsphere.local';
+SELECT user_id, 3 FROM users WHERE email LIKE 'member%@fitsphere.local';
 
 -- Trainers
 INSERT INTO trainers (user_id, branch_id, specialization, availability_status)
 SELECT
     u.user_id,
-    ((u.user_id - 1) % 35) + 1,
+    ((u.user_id - 37) % 35) + 1,
     CASE u.user_id % 6
         WHEN 0 THEN 'Strength & Conditioning'
         WHEN 1 THEN 'Pilates & Mobility'
@@ -206,15 +214,10 @@ WHERE u.email LIKE 'trainer%@fitsphere.local';
 INSERT INTO members (user_id, branch_id, birth_date, gender, emergency_contact, join_date, status)
 SELECT
     u.user_id,
-    -- Weighted branch distribution: branches 1-5 (Istanbul hubs) get ~3x more members
-    CASE
-        WHEN u.user_id % 10 IN (0,1,2) THEN (u.user_id % 5) + 1
-        WHEN u.user_id % 10 IN (3,4)   THEN (u.user_id % 10) + 6
-        ELSE                                 (u.user_id % 20) + 16
-    END,
+    ((u.user_id - 177) % 35) + 1,
     DATE_SUB('2006-12-31', INTERVAL (u.user_id % 7300) DAY),
     CASE u.user_id % 3 WHEN 0 THEN 'male' WHEN 1 THEN 'female' ELSE 'other' END,
-    CONCAT('Emergency Contact - +90 533 ', LPAD(4000000 + (u.user_id % 10000), 7, '0')),
+    CONCAT('Emergency - +90 533 ', LPAD(4000000 + (u.user_id % 10000), 7, '0')),
     DATE_SUB(NOW(), INTERVAL (u.user_id % 500) DAY),
     CASE
         WHEN u.user_id % 29 = 0 THEN 'suspended'
@@ -224,18 +227,17 @@ SELECT
 FROM users u
 WHERE u.email LIKE 'member%@fitsphere.local';
 
--- Membership packages
+-- Packages
 INSERT INTO packages (package_name, duration_days, price, is_active) VALUES
 ('Monthly Basic', 30, 1500.00, 1),
 ('Quarterly Plus', 90, 4200.00, 1),
 ('Semi-Annual Peak', 180, 7900.00, 1),
 ('Annual Pro', 365, 14500.00, 1);
 
--- Subscriptions (weighted: Monthly Basic most popular, Annual Pro least)
+-- Subscriptions
 INSERT INTO subscriptions (member_id, package_id, start_date, end_date, status)
 SELECT
     m.member_id,
-    -- Monthly Basic ~45%, Quarterly Plus ~30%, Semi-Annual ~15%, Annual Pro ~10%
     CASE
         WHEN m.member_id % 20 IN (0,1,2,3,4,5,6,7,8) THEN 1
         WHEN m.member_id % 20 IN (9,10,11,12,13,14)   THEN 2
@@ -252,7 +254,7 @@ SELECT
 FROM members m
 WHERE m.status IN ('active', 'inactive');
 
--- Payments (spread across last 6 months, heavier in recent months)
+-- Payments
 INSERT INTO payments (subscription_id, amount, payment_method, status, paid_at)
 SELECT
     s.subscription_id,
@@ -264,7 +266,6 @@ SELECT
         ELSE 'online'
     END,
     'paid',
-    -- More payments in recent months (current month ~40%, last month ~30%, older ~30%)
     CASE
         WHEN s.subscription_id % 10 IN (0,1,2,3) THEN
             DATE_SUB(NOW(), INTERVAL (s.subscription_id % 25) DAY)
@@ -287,35 +288,21 @@ INSERT INTO skills (skill_name, category) VALUES
 ('Bodybuilding', 'Strength'),
 ('Posture Improvement', 'Wellness');
 
--- Trainer skills (2 per trainer)
+-- Trainer skills
 INSERT IGNORE INTO trainer_skills (trainer_id, skill_id, level)
-SELECT
-    t.trainer_id,
-    ((t.trainer_id % 8) + 1),
-    CASE t.trainer_id % 4
-        WHEN 0 THEN 'expert'
-        WHEN 1 THEN 'advanced'
-        WHEN 2 THEN 'intermediate'
-        ELSE 'advanced'
-    END
+SELECT t.trainer_id, ((t.trainer_id % 8) + 1),
+    CASE t.trainer_id % 4 WHEN 0 THEN 'expert' WHEN 1 THEN 'advanced' WHEN 2 THEN 'intermediate' ELSE 'advanced' END
 FROM trainers t;
 
 INSERT IGNORE INTO trainer_skills (trainer_id, skill_id, level)
-SELECT
-    t.trainer_id,
-    (((t.trainer_id + 3) % 8) + 1),
-    CASE t.trainer_id % 3
-        WHEN 0 THEN 'advanced'
-        WHEN 1 THEN 'intermediate'
-        ELSE 'expert'
-    END
+SELECT t.trainer_id, (((t.trainer_id + 3) % 8) + 1),
+    CASE t.trainer_id % 3 WHEN 0 THEN 'advanced' WHEN 1 THEN 'intermediate' ELSE 'expert' END
 FROM trainers t;
 
 -- Classes
 INSERT INTO classes (trainer_id, branch_id, class_name, capacity, duration_min, level)
 SELECT
-    t.trainer_id,
-    t.branch_id,
+    t.trainer_id, t.branch_id,
     CASE t.trainer_id % 7
         WHEN 0 THEN 'Total Body Strength'
         WHEN 1 THEN 'Metabolic Burn'
@@ -327,78 +314,23 @@ SELECT
     END,
     18 + (t.trainer_id % 16),
     45 + ((t.trainer_id % 4) * 15),
-    CASE t.trainer_id % 3
-        WHEN 0 THEN 'beginner'
-        WHEN 1 THEN 'intermediate'
-        ELSE 'advanced'
-    END
+    CASE t.trainer_id % 3 WHEN 0 THEN 'beginner' WHEN 1 THEN 'intermediate' ELSE 'advanced' END
 FROM trainers t
 WHERE t.availability_status = 'active';
 
 -- Class schedules
 INSERT INTO class_schedules (class_id, day_of_week, start_time, end_time, is_active)
-SELECT
-    c.class_id,
+SELECT c.class_id,
     CASE c.class_id % 7
-        WHEN 0 THEN 'monday'
-        WHEN 1 THEN 'tuesday'
-        WHEN 2 THEN 'wednesday'
-        WHEN 3 THEN 'thursday'
-        WHEN 4 THEN 'friday'
-        WHEN 5 THEN 'saturday'
-        ELSE 'sunday'
+        WHEN 0 THEN 'monday' WHEN 1 THEN 'tuesday' WHEN 2 THEN 'wednesday'
+        WHEN 3 THEN 'thursday' WHEN 4 THEN 'friday' WHEN 5 THEN 'saturday' ELSE 'sunday'
     END,
-    CASE c.class_id % 3
-        WHEN 0 THEN '07:30:00'
-        WHEN 1 THEN '18:00:00'
-        ELSE '20:00:00'
-    END,
-    CASE c.class_id % 3
-        WHEN 0 THEN '08:30:00'
-        WHEN 1 THEN '19:00:00'
-        ELSE '21:00:00'
-    END,
+    CASE c.class_id % 3 WHEN 0 THEN '07:30:00' WHEN 1 THEN '18:00:00' ELSE '20:00:00' END,
+    CASE c.class_id % 3 WHEN 0 THEN '08:30:00' WHEN 1 THEN '19:00:00' ELSE '21:00:00' END,
     1
 FROM classes c;
 
-INSERT INTO class_schedules (class_id, day_of_week, start_time, end_time, is_active)
-SELECT
-    c.class_id,
-    CASE c.class_id % 2 WHEN 0 THEN 'saturday' ELSE 'sunday' END,
-    '10:00:00',
-    '11:00:00',
-    1
-FROM classes c
-WHERE c.class_id % 2 = 0;
-
-DROP TEMPORARY TABLE IF EXISTS tmp_schedule_map;
-CREATE TEMPORARY TABLE tmp_schedule_map AS
-SELECT
-    (@rn := @rn + 1) AS rn,
-    cs.schedule_id
-FROM class_schedules cs
-JOIN (SELECT @rn := 0) vars
-ORDER BY cs.schedule_id;
-
-SET @schedule_total = (SELECT COUNT(*) FROM tmp_schedule_map);
-
--- Reservations
-INSERT INTO class_reservations (schedule_id, member_id, reserved_at, status)
-SELECT
-    sm.schedule_id,
-    m.member_id,
-    DATE_SUB(NOW(), INTERVAL (m.member_id % 25) DAY),
-    CASE
-        WHEN m.member_id % 9 = 0 THEN 'attended'
-        WHEN m.member_id % 13 = 0 THEN 'cancelled'
-        ELSE 'reserved'
-    END
-FROM members m
-JOIN tmp_schedule_map sm ON sm.rn = ((m.member_id % @schedule_total) + 1)
-WHERE m.status = 'active'
-LIMIT 1600;
-
--- Equipment setup
+-- Equipment
 INSERT INTO equipment_categories (category_name, description) VALUES
 ('Cardio Machines', 'Treadmills and bikes'),
 ('Strength Machines', 'Resistance and plate-loaded machines'),
@@ -418,13 +350,7 @@ SELECT
         WHEN 4 THEN CONCAT('Rower Station ', b.branch_id)
         ELSE CONCAT('Dumbbell Set ', b.branch_id)
     END,
-    CASE s.slot
-        WHEN 1 THEN 'RunTech'
-        WHEN 2 THEN 'IronForm'
-        WHEN 3 THEN 'CoreMotion'
-        WHEN 4 THEN 'CardioCore'
-        ELSE 'PowerLift'
-    END,
+    CASE s.slot WHEN 1 THEN 'RunTech' WHEN 2 THEN 'IronForm' WHEN 3 THEN 'CoreMotion' WHEN 4 THEN 'CardioCore' ELSE 'PowerLift' END,
     DATE_SUB(CURDATE(), INTERVAL ((b.branch_id * 50) + (s.slot * 23)) DAY),
     CASE
         WHEN s.slot = 3 AND b.branch_id % 7 = 0 THEN 'maintenance'
@@ -432,43 +358,27 @@ SELECT
         ELSE 'active'
     END
 FROM branches b
-JOIN (
-    SELECT 1 AS slot
-    UNION ALL SELECT 2
-    UNION ALL SELECT 3
-    UNION ALL SELECT 4
-    UNION ALL SELECT 5
-) s;
+JOIN (SELECT 1 AS slot UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) s;
 
 INSERT INTO maintenance_records (equipment_id, maintenance_date, description, cost)
-SELECT
-    e.equipment_id,
-    DATE_SUB(CURDATE(), INTERVAL (e.equipment_id % 14) DAY),
-    'Scheduled maintenance and performance check',
-    500 + (e.equipment_id % 9) * 130
-FROM equipment e
-WHERE e.status = 'maintenance';
+SELECT e.equipment_id, DATE_SUB(CURDATE(), INTERVAL (e.equipment_id % 14) DAY),
+    'Scheduled maintenance and performance check', 500 + (e.equipment_id % 9) * 130
+FROM equipment e WHERE e.status = 'maintenance';
 
 -- Attendance logs
 INSERT INTO attendance_logs (member_id, branch_id, check_in, check_out)
-SELECT
-    m.member_id,
-    m.branch_id,
+SELECT m.member_id, m.branch_id,
     DATE_SUB(NOW(), INTERVAL (m.member_id % 21) DAY),
     DATE_ADD(DATE_SUB(NOW(), INTERVAL (m.member_id % 21) DAY), INTERVAL (55 + (m.member_id % 95)) MINUTE)
-FROM members m
-WHERE m.status = 'active'
-LIMIT 1800;
+FROM members m WHERE m.status = 'active'
+LIMIT 1000;
 
 -- Notifications
 INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
-SELECT
-    u.user_id,
+SELECT u.user_id,
     CASE u.user_id % 4
-        WHEN 0 THEN 'Subscription Reminder'
-        WHEN 1 THEN 'Class Capacity Alert'
-        WHEN 2 THEN 'Maintenance Notice'
-        ELSE 'Welcome Back'
+        WHEN 0 THEN 'Subscription Reminder' WHEN 1 THEN 'Class Capacity Alert'
+        WHEN 2 THEN 'Maintenance Notice' ELSE 'Welcome Back'
     END,
     CASE u.user_id % 4
         WHEN 0 THEN 'Your subscription is approaching expiry within 7 days.'
@@ -476,21 +386,14 @@ SELECT
         WHEN 2 THEN 'A maintenance task has been planned in your branch.'
         ELSE 'Great to see your activity increasing this month.'
     END,
-    CASE u.user_id % 4
-        WHEN 0 THEN 'warning'
-        WHEN 1 THEN 'info'
-        WHEN 2 THEN 'danger'
-        ELSE 'success'
-    END,
+    CASE u.user_id % 4 WHEN 0 THEN 'warning' WHEN 1 THEN 'info' WHEN 2 THEN 'danger' ELSE 'success' END,
     CASE WHEN u.user_id % 3 = 0 THEN 1 ELSE 0 END,
     DATE_SUB(NOW(), INTERVAL (u.user_id % 12) DAY)
-FROM users u
-WHERE u.user_id <= 500;
+FROM users u WHERE u.user_id <= 200;
 
 -- Feedback
 INSERT INTO feedback (member_id, trainer_id, rating, comment, created_at)
-SELECT
-    m.member_id,
+SELECT m.member_id,
     ((m.member_id % (SELECT COUNT(*) FROM trainers)) + 1),
     (m.member_id % 5) + 1,
     CASE m.member_id % 4
@@ -500,14 +403,12 @@ SELECT
         ELSE 'Overall positive experience with noticeable progress.'
     END,
     DATE_SUB(NOW(), INTERVAL (m.member_id % 30) DAY)
-FROM members m
-WHERE m.status = 'active'
-LIMIT 700;
+FROM members m WHERE m.status = 'active'
+LIMIT 500;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_seq;
 DROP TEMPORARY TABLE IF EXISTS tmp_first_names;
 DROP TEMPORARY TABLE IF EXISTS tmp_last_names;
-DROP TEMPORARY TABLE IF EXISTS tmp_schedule_map;
 
 SET FOREIGN_KEY_CHECKS = 1;
 SET SQL_SAFE_UPDATES = 1;
