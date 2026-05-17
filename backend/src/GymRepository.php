@@ -17,34 +17,40 @@ final class GymRepository
     // DASHBOARD
     // -------------------------------------------------------------------------
 
-    public function getDashboardStats(): array
+    public function getDashboardStats(?int $branchId = null): array
     {
+        $bWhere  = $branchId !== null ? " AND branch_id = {$branchId}" : '';
+        $mFilter = $branchId !== null ? "JOIN members m2 ON s.member_id = m2.member_id AND m2.branch_id = {$branchId}" : '';
+
         return [
-            'totalMembers'            => $this->count("SELECT COUNT(*) AS c FROM members WHERE status='active'"),
-            'inactiveMembers'         => $this->count("SELECT COUNT(*) AS c FROM members WHERE status IN ('inactive','suspended')"),
-            'totalTrainers'           => $this->count("SELECT COUNT(*) AS c FROM trainers WHERE availability_status='active'"),
-            'totalClasses'            => $this->count('SELECT COUNT(*) AS c FROM classes'),
-            'totalEquipment'          => $this->count("SELECT COUNT(*) AS c FROM equipment WHERE status='active'"),
-            'expiringSoon'            => $this->count("SELECT COUNT(*) AS c FROM subscriptions WHERE status='active' AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)"),
-            'maintenanceDue'          => $this->count("SELECT COUNT(*) AS c FROM equipment WHERE status='maintenance'"),
-            'cityDistribution'        => $this->getCityDistribution(6),
-            'topBranches'             => $this->getTopBranches(6),
-            'monthlyRevenue'          => $this->getMonthlyRevenue(),
-            'subscriptionBreakdown'   => $this->getSubscriptionBreakdown(),
-            'recentActivity'          => $this->getRecentActivity(8),
-            'monthlyRevenueChart'     => $this->getMonthlyRevenueChart(6),
-            'branchRevenue'           => $this->getBranchRevenue(6),
-            'packageProfitability'    => $this->getPackageProfitability(6),
+            'totalMembers'          => $this->count("SELECT COUNT(*) AS c FROM members WHERE status='active'{$bWhere}"),
+            'inactiveMembers'       => $this->count("SELECT COUNT(*) AS c FROM members WHERE status IN ('inactive','suspended'){$bWhere}"),
+            'totalTrainers'         => $this->count("SELECT COUNT(*) AS c FROM trainers WHERE availability_status='active'{$bWhere}"),
+            'totalClasses'          => $this->count("SELECT COUNT(*) AS c FROM classes WHERE 1=1{$bWhere}"),
+            'totalEquipment'        => $this->count("SELECT COUNT(*) AS c FROM equipment WHERE status='active'{$bWhere}"),
+            'expiringSoon'          => $this->count("SELECT COUNT(*) AS c FROM subscriptions s {$mFilter} WHERE s.status='active' AND s.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)"),
+            'maintenanceDue'        => $this->count("SELECT COUNT(*) AS c FROM equipment WHERE status='maintenance'{$bWhere}"),
+            'cityDistribution'      => $this->getCityDistribution(6, $branchId),
+            'topBranches'           => $this->getTopBranches(6, $branchId),
+            'monthlyRevenue'        => $this->getMonthlyRevenue($branchId),
+            'subscriptionBreakdown' => $this->getSubscriptionBreakdown($branchId),
+            'recentActivity'        => $this->getRecentActivity(8, $branchId),
+            'monthlyRevenueChart'   => $this->getMonthlyRevenueChart(6, $branchId),
+            'branchRevenue'         => $this->getBranchRevenue(6, $branchId),
+            'packageProfitability'  => $this->getPackageProfitability(6, $branchId),
         ];
     }
 
-    public function getMonthlyRevenue(): float
+    public function getMonthlyRevenue(?int $branchId = null): float
     {
+        $join  = $branchId !== null ? "JOIN members m ON s.member_id = m.member_id AND m.branch_id = {$branchId}" : '';
         $sql = "
-            SELECT COALESCE(SUM(amount), 0) AS c
-            FROM payments
-            WHERE status = 'paid'
-                            AND paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            SELECT COALESCE(SUM(py.amount), 0) AS c
+            FROM payments py
+            JOIN subscriptions s ON py.subscription_id = s.subscription_id
+            {$join}
+            WHERE py.status = 'paid'
+              AND py.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ";
         $result = $this->conn->query($sql);
         $row    = $result->fetch_assoc();
@@ -52,21 +58,24 @@ final class GymRepository
         return (float) ($row['c'] ?? 0);
     }
 
-    public function getSubscriptionBreakdown(): array
+    public function getSubscriptionBreakdown(?int $branchId = null): array
     {
+        $join  = $branchId !== null ? "JOIN members m ON s.member_id = m.member_id AND m.branch_id = {$branchId}" : '';
         $sql = "
-            SELECT status AS label, COUNT(*) AS value
-            FROM subscriptions
-            GROUP BY status
-            ORDER BY FIELD(status, 'active', 'expired', 'cancelled')
+            SELECT s.status AS label, COUNT(*) AS value
+            FROM subscriptions s
+            {$join}
+            GROUP BY s.status
+            ORDER BY FIELD(s.status, 'active', 'expired', 'cancelled')
         ";
 
         return $this->fetchAll($sql);
     }
 
-    public function getRecentActivity(int $limit = 8): array
+    public function getRecentActivity(int $limit = 8, ?int $branchId = null): array
     {
-        $limit = $this->normalizeLimit($limit);
+        $limit      = $this->normalizeLimit($limit);
+        $bAndMember = $branchId !== null ? "AND m.branch_id = {$branchId}" : '';
         $sql = "
             (
                 SELECT
@@ -77,6 +86,7 @@ final class GymRepository
                 FROM members m
                 JOIN users u ON m.user_id = u.user_id
                 JOIN branches b ON m.branch_id = b.branch_id
+                WHERE 1=1 {$bAndMember}
                 ORDER BY m.join_date DESC
                 LIMIT {$limit}
             )
@@ -91,6 +101,7 @@ final class GymRepository
                 JOIN members m ON s.member_id = m.member_id
                 JOIN users u ON m.user_id = u.user_id
                 JOIN packages p ON s.package_id = p.package_id
+                WHERE 1=1 {$bAndMember}
                 ORDER BY s.subscription_id DESC
                 LIMIT {$limit}
             )
@@ -105,7 +116,7 @@ final class GymRepository
                 JOIN subscriptions s ON py.subscription_id = s.subscription_id
                 JOIN members m ON s.member_id = m.member_id
                 JOIN users u ON m.user_id = u.user_id
-                WHERE py.status = 'paid' AND py.paid_at IS NOT NULL
+                WHERE py.status = 'paid' AND py.paid_at IS NOT NULL {$bAndMember}
                 ORDER BY py.paid_at DESC
                 LIMIT {$limit}
             )
@@ -116,26 +127,29 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function getMonthlyRevenueChart(int $months = 6): array
+    public function getMonthlyRevenueChart(int $months = 6, ?int $branchId = null): array
     {
         $months = max(1, min(24, $months));
+        $join   = $branchId !== null ? "JOIN subscriptions s ON py.subscription_id = s.subscription_id JOIN members m ON s.member_id = m.member_id AND m.branch_id = {$branchId}" : '';
         $sql = "
             SELECT
-                DATE_FORMAT(paid_at, '%Y-%m') AS label,
-                COALESCE(SUM(amount), 0) AS value
-            FROM payments
-            WHERE status = 'paid'
-              AND paid_at >= DATE_SUB(CURDATE(), INTERVAL {$months} MONTH)
-            GROUP BY DATE_FORMAT(paid_at, '%Y-%m')
+                DATE_FORMAT(py.paid_at, '%Y-%m') AS label,
+                COALESCE(SUM(py.amount), 0) AS value
+            FROM payments py
+            {$join}
+            WHERE py.status = 'paid'
+              AND py.paid_at >= DATE_SUB(CURDATE(), INTERVAL {$months} MONTH)
+            GROUP BY DATE_FORMAT(py.paid_at, '%Y-%m')
             ORDER BY label ASC
         ";
 
         return $this->fetchAll($sql);
     }
 
-    public function getBranchRevenue(int $limit = 6): array
+    public function getBranchRevenue(int $limit = 6, ?int $branchId = null): array
     {
-        $limit = $this->normalizeLimit($limit);
+        $limit     = $this->normalizeLimit($limit);
+        $branchAnd = $branchId !== null ? "AND b.branch_id = {$branchId}" : '';
         $sql = "
             SELECT
                 b.branch_name AS label,
@@ -146,7 +160,7 @@ final class GymRepository
             LEFT JOIN payments py ON py.subscription_id = s.subscription_id
                 AND py.status = 'paid'
                 AND py.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-            WHERE b.status = 'active'
+            WHERE b.status = 'active' {$branchAnd}
             GROUP BY b.branch_id, b.branch_name
             ORDER BY value DESC
             LIMIT {$limit}
@@ -155,9 +169,10 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function getPackageProfitability(int $limit = 6): array
+    public function getPackageProfitability(int $limit = 6, ?int $branchId = null): array
     {
         $limit = $this->normalizeLimit($limit);
+        $join  = $branchId !== null ? "JOIN members m ON s.member_id = m.member_id AND m.branch_id = {$branchId}" : '';
         $sql = "
             SELECT
                 p.package_name AS label,
@@ -166,6 +181,7 @@ final class GymRepository
                 p.price AS unit_price
             FROM packages p
             LEFT JOIN subscriptions s ON s.package_id = p.package_id
+            {$join}
             LEFT JOIN payments py ON py.subscription_id = s.subscription_id
                 AND py.status = 'paid'
             WHERE p.is_active = 1
@@ -177,16 +193,17 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function getCityDistribution(int $limit = 6): array
+    public function getCityDistribution(int $limit = 6, ?int $branchId = null): array
     {
-        $limit = $this->normalizeLimit($limit);
+        $limit     = $this->normalizeLimit($limit);
+        $branchAnd = $branchId !== null ? "AND m.branch_id = {$branchId}" : '';
         $sql = "
             SELECT
                 b.city AS label,
                 COUNT(m.member_id) AS value
             FROM members m
             JOIN branches b ON b.branch_id = m.branch_id
-            WHERE m.status = 'active'
+            WHERE m.status = 'active' {$branchAnd}
             GROUP BY b.city
             ORDER BY value DESC, b.city ASC
             LIMIT {$limit}
@@ -195,16 +212,17 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function getTopBranches(int $limit = 6): array
+    public function getTopBranches(int $limit = 6, ?int $branchId = null): array
     {
-        $limit = $this->normalizeLimit($limit);
+        $limit     = $this->normalizeLimit($limit);
+        $branchAnd = $branchId !== null ? "AND m.branch_id = {$branchId}" : '';
         $sql = "
             SELECT
                 b.branch_name AS label,
                 COUNT(m.member_id) AS value
             FROM members m
             JOIN branches b ON b.branch_id = m.branch_id
-            WHERE m.status = 'active'
+            WHERE m.status = 'active' {$branchAnd}
             GROUP BY b.branch_id, b.branch_name
             ORDER BY value DESC, b.branch_name ASC
             LIMIT {$limit}
