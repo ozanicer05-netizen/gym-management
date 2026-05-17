@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS classes (
     class_name VARCHAR(120) NOT NULL,
     capacity INT NOT NULL DEFAULT 20,
     duration_min INT NOT NULL DEFAULT 60,
+    start_date DATE NULL,
     level ENUM('beginner', 'intermediate', 'advanced') NOT NULL DEFAULT 'beginner',
     CONSTRAINT fk_classes_trainer FOREIGN KEY (trainer_id) REFERENCES trainers(trainer_id),
     CONSTRAINT fk_classes_branch FOREIGN KEY (branch_id) REFERENCES branches(branch_id)

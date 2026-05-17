@@ -592,7 +592,7 @@ final class GymRepository
     // CLASSES
     // -------------------------------------------------------------------------
 
-    public function listClasses(string $search = '', string $level = '', int $limit = 50, int $offset = 0): array
+    public function listClasses(string $search = '', string $level = '', int $limit = 50, int $offset = 0, ?int $branchId = null): array
     {
         $search = trim($search);
         $level  = trim($level);
@@ -609,6 +609,9 @@ final class GymRepository
         if ($safeLevel !== '') {
             $where .= " AND c.level = '{$safeLevel}'";
         }
+        if ($branchId !== null) {
+            $where .= " AND c.branch_id = " . (int) $branchId;
+        }
 
         $sql = "
             SELECT
@@ -617,6 +620,7 @@ final class GymRepository
                 c.capacity,
                 c.duration_min,
                 c.level,
+                c.start_date,
                 b.branch_name,
                 CONCAT(u.name, ' ', u.surname) AS trainer_name
             FROM classes c
@@ -631,7 +635,7 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function countClasses(string $search = '', string $level = ''): int
+    public function countClasses(string $search = '', string $level = '', ?int $branchId = null): int
     {
         $search = trim($search);
         $level  = trim($level);
@@ -645,6 +649,9 @@ final class GymRepository
         }
         if ($safeLevel !== '') {
             $where .= " AND c.level = '{$safeLevel}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND c.branch_id = " . (int) $branchId;
         }
 
         $sql = "
@@ -1174,7 +1181,7 @@ final class GymRepository
     // EQUIPMENT
     // -------------------------------------------------------------------------
 
-    public function listEquipment(string $search = '', string $status = '', int $limit = 50, int $offset = 0): array
+    public function listEquipment(string $search = '', string $status = '', int $limit = 50, int $offset = 0, ?int $branchId = null): array
     {
         $search = trim($search);
         $status = trim($status);
@@ -1190,6 +1197,9 @@ final class GymRepository
         }
         if ($safeStatus !== '') {
             $where .= " AND e.status = '{$safeStatus}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND e.branch_id = " . (int) $branchId;
         }
 
         $sql = "
@@ -1212,7 +1222,7 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function countEquipment(string $search = '', string $status = ''): int
+    public function countEquipment(string $search = '', string $status = '', ?int $branchId = null): int
     {
         $search = trim($search);
         $status = trim($status);
@@ -1226,6 +1236,9 @@ final class GymRepository
         }
         if ($safeStatus !== '') {
             $where .= " AND e.status = '{$safeStatus}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND e.branch_id = " . (int) $branchId;
         }
 
         $sql = "
