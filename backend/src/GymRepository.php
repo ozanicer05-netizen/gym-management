@@ -825,7 +825,7 @@ final class GymRepository
     // BRANCHES
     // -------------------------------------------------------------------------
 
-    public function listBranches(string $search = '', string $status = '', int $limit = 50, int $offset = 0, bool $withStats = false): array
+    public function listBranches(string $search = '', string $status = '', int $limit = 50, int $offset = 0, bool $withStats = false, ?int $branchId = null): array
     {
         $search = trim($search);
         $status = trim($status);
@@ -841,6 +841,9 @@ final class GymRepository
         }
         if ($safeStatus !== '') {
             $where .= " AND b.status = '{$safeStatus}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND b.branch_id = {$branchId}";
         }
 
         if ($withStats) {
@@ -883,7 +886,7 @@ final class GymRepository
         return $this->fetchAll($sql);
     }
 
-    public function countBranches(string $search = '', string $status = ''): int
+    public function countBranches(string $search = '', string $status = '', ?int $branchId = null): int
     {
         $search = trim($search);
         $status = trim($status);
@@ -897,6 +900,9 @@ final class GymRepository
         }
         if ($safeStatus !== '') {
             $where .= " AND status = '{$safeStatus}'";
+        }
+        if ($branchId !== null) {
+            $where .= " AND branch_id = {$branchId}";
         }
 
         $sql = "SELECT COUNT(*) AS c FROM branches {$where}";

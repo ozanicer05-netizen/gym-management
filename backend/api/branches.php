@@ -12,6 +12,11 @@ $limit  = max(1, min(200, (int) ($_GET['limit'] ?? 50)));
 $page   = max(1, (int) ($_GET['page'] ?? 1));
 $offset = ($page - 1) * $limit;
 
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+$authUser      = $_SESSION['auth_user'] ?? [];
+$sessionBranch = isset($authUser['branch_id']) && $authUser['branch_id'] !== null
+                 ? (int) $authUser['branch_id'] : null;
+
 try {
     $repo = new GymRepository();
 
@@ -28,8 +33,8 @@ try {
         }
 
         $withStats  = isset($_GET['stats']) && $_GET['stats'] === '1';
-        $rows       = $repo->listBranches($search, $status, $limit, $offset, $withStats);
-        $total      = $repo->countBranches($search, $status);
+        $rows       = $repo->listBranches($search, $status, $limit, $offset, $withStats, $sessionBranch);
+        $total      = $repo->countBranches($search, $status, $sessionBranch);
         $totalPages = max(1, (int) ceil($total / $limit));
 
         ApiResponse::ok($rows, [
